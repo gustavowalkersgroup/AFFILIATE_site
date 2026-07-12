@@ -1,0 +1,3271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0d1117">
+<title>AFFILIATE — Painel</title>
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#21262d; --border:#30363d;
+    --text:#e6edf3; --muted:#8b949e;
+    --green:#3fb950; --yellow:#d29922; --red:#f85149; --blue:#58a6ff;
+    --shopee:#ff6b4a; --meli:#ffe600;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    font-size:15px; line-height:1.45; min-height:100vh;
+  }
+  .hidden{display:none !important;}
+  .muted{color:var(--muted);}
+  a{color:var(--blue); text-decoration:none;}
+  button{font:inherit;}
+  input,select{
+    font:inherit; color:var(--text); background:var(--bg); border:1px solid var(--border);
+    border-radius:8px; padding:9px 11px; width:100%; min-width:0;
+  }
+  input:focus,select:focus{outline:none; border-color:var(--blue);}
+  ::placeholder{color:var(--muted); opacity:.7;}
+
+  /* ===== botões ===== */
+  .btn{
+    background:var(--bg3); color:var(--text); border:1px solid var(--border);
+    border-radius:8px; padding:9px 14px; cursor:pointer; font-weight:600; font-size:14px;
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    transition:filter .1s; -webkit-tap-highlight-color:transparent; white-space:nowrap;
+  }
+  .btn:active{filter:brightness(1.25);}
+  .btn:disabled{opacity:.55; cursor:default;}
+  .btn-primary{background:#1f6feb; border-color:#1f6feb; color:#fff;}
+  .btn-green{background:#238636; border-color:#2ea043; color:#fff;}
+  .btn-warn{background:#3a2d12; border-color:var(--yellow); color:var(--yellow);}
+  .btn-danger-ghost{background:transparent; border-color:rgba(248,81,73,.5); color:var(--red);}
+  .btn-ghost{background:transparent;}
+  .btn.loading{pointer-events:none; opacity:.75;}
+  .spinner{
+    display:inline-block; width:14px; height:14px; flex:none;
+    border:2px solid rgba(255,255,255,.25); border-top-color:currentColor;
+    border-radius:50%; animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ===== login ===== */
+  .login{
+    position:fixed; inset:0; z-index:200; background:var(--bg);
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .login-box{
+    width:100%; max-width:360px; background:var(--bg2); border:1px solid var(--border);
+    border-radius:14px; padding:28px 22px; display:flex; flex-direction:column; gap:14px; text-align:center;
+  }
+  .login-box h1{font-size:22px;}
+  .login-box p{font-size:14px; color:var(--muted);}
+  .login-err{color:var(--red) !important; font-weight:600;}
+
+  /* ===== cabeçalho fixo ===== */
+  header{
+    position:sticky; top:0; z-index:50; background:rgba(13,17,23,.97);
+    border-bottom:1px solid var(--border); backdrop-filter:blur(6px);
+  }
+  .hdr-row{display:flex; align-items:center; gap:10px; padding:10px 12px 4px;}
+  .dot{width:13px; height:13px; border-radius:50%; flex:none; background:var(--muted);}
+  .dot.running{background:var(--green); box-shadow:0 0 8px rgba(63,185,80,.7);}
+  .dot.paused{background:var(--yellow); box-shadow:0 0 8px rgba(210,153,34,.7);}
+  .hdr-info{flex:1; min-width:0;}
+  .hdr-title{font-weight:700; font-size:15px; letter-spacing:.04em;}
+  .hdr-sub{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  #btn-refresh{padding:8px 11px; font-size:17px; line-height:1;}
+  #btn-pause{min-width:96px;}
+  .hdr-stats{
+    display:flex; flex-wrap:wrap; gap:4px 14px; padding:2px 12px 8px;
+    font-size:12.5px; color:var(--muted);
+  }
+  .hdr-stats b{font-weight:600;}
+  .ok-c{color:var(--green);} .err-c{color:var(--red);}
+  .health-strip{display:flex; flex-wrap:wrap; gap:4px 10px; padding:0 12px 8px; font-size:11.5px;}
+  .health-chip{display:inline-flex; align-items:center; gap:5px; color:var(--muted); white-space:nowrap;}
+  .health-chip .hdot{width:8px; height:8px; border-radius:50%; flex:none; background:var(--muted);}
+  .health-chip .hdot.ok{background:var(--green);} .health-chip .hdot.warn{background:var(--yellow);}
+  .health-chip .hdot.err{background:var(--red);} .health-chip .hdot.off{background:var(--muted); opacity:.45;}
+  .health-chip.err{color:var(--red);} .health-chip.warn{color:var(--yellow);}
+  .queue-warn{margin:0 12px 8px; padding:7px 10px; border-radius:8px; font-size:12.5px;
+    background:rgba(210,153,34,.12); border:1px solid rgba(210,153,34,.5); color:var(--yellow);}
+  .tabs{display:flex; gap:2px; overflow-x:auto; padding:0 8px; scrollbar-width:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{
+    background:none; border:none; border-bottom:2px solid transparent; color:var(--muted);
+    padding:9px 12px; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .tab.active{color:var(--text); border-bottom-color:#f78166;}
+  .cnt{
+    background:var(--bg3); border:1px solid var(--border); border-radius:10px;
+    font-size:11px; padding:0 6px; min-width:18px; text-align:center; color:var(--muted);
+  }
+  .cnt:empty{display:none;}
+
+  /* ===== layout ===== */
+  main{max-width:860px; margin:0 auto; padding:14px 12px 90px;}
+  .toolbar{display:flex; gap:8px; align-items:center; margin-bottom:12px; flex-wrap:wrap;}
+  .toolbar select{width:auto; flex:none;}
+  .toolbar input{flex:1;}
+  .empty{color:var(--muted); text-align:center; padding:28px 8px; font-size:14px;}
+  h2{font-size:16px; margin-bottom:10px;}
+  .card{
+    background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+    padding:14px; margin-bottom:14px;
+  }
+
+  /* ===== cards de oferta ===== */
+  .card-offer{
+    background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+    padding:12px; margin-bottom:12px;
+  }
+  .offer-top{display:flex; gap:11px;}
+  .thumb{width:74px; height:74px; flex:none; border-radius:9px; overflow:hidden; background:var(--bg3); border:1px solid var(--border);}
+  .thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+  .noimg{width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:28px; opacity:.6;}
+  .offer-info{flex:1; min-width:0;}
+  .offer-title{
+    font-size:14px; font-weight:600; line-height:1.3; margin-bottom:5px; color:var(--text);
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .offer-score{flex:none; text-align:center; min-width:46px;}
+  .score-n{font-size:23px; font-weight:800; line-height:1.05;}
+  .score-hi{color:var(--green);} .score-mid{color:var(--yellow);} .score-lo{color:var(--muted);}
+  .score-l{font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em;}
+  .badges{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:6px;}
+  .badge{
+    font-size:11px; font-weight:700; padding:1px 7px; border-radius:9px;
+    border:1px solid var(--border); color:var(--muted); text-transform:lowercase;
+  }
+  .badge-shopee{background:rgba(238,77,45,.15); border-color:rgba(238,77,45,.55); color:var(--shopee);}
+  .badge-meli{background:rgba(255,230,0,.09); border-color:rgba(255,230,0,.4); color:var(--meli);}
+  .badge-disc{background:rgba(63,185,80,.12); border-color:rgba(63,185,80,.5); color:var(--green);}
+  .badge-st{background:rgba(210,153,34,.12); border-color:rgba(210,153,34,.5); color:var(--yellow);}
+
+  /* ===== buckets do mix (preview "próximos a postar") ===== */
+  .badge-bkt{text-transform:none;}
+  .badge-bkt.vestuario{background:rgba(88,166,255,.13); border-color:rgba(88,166,255,.5); color:var(--blue);}
+  .badge-bkt.acessorios{background:rgba(63,185,80,.12); border-color:rgba(63,185,80,.5); color:var(--green);}
+  .badge-bkt.suplementos{background:rgba(210,153,34,.12); border-color:rgba(210,153,34,.5); color:var(--yellow);}
+  .nextrow{
+    display:flex; align-items:center; gap:10px; padding:8px 10px;
+    background:var(--bg); border:1px solid var(--border); border-radius:9px; margin-bottom:7px;
+  }
+  .next-pos{
+    width:24px; height:24px; flex:none; border-radius:50%; display:flex; align-items:center;
+    justify-content:center; font-size:12px; font-weight:800; background:var(--bg3); color:var(--muted);
+  }
+  .next-main{flex:1; min-width:0;}
+  .next-title{font-size:13.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .next-sub{display:flex; flex-wrap:wrap; align-items:center; gap:5px 8px; font-size:12px; color:var(--muted); margin-top:2px;}
+  .next-price{font-weight:700; color:var(--green);}
+  .next-score{flex:none; text-align:center; min-width:38px;}
+  .next-score b{font-size:16px; font-weight:800; line-height:1;}
+  .next-score span{display:block; font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em;}
+  .prices{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;}
+  .from{font-size:12.5px; color:var(--muted); text-decoration:line-through;}
+  .por{font-size:17px; font-weight:800; color:var(--green);}
+  .meta{display:flex; flex-wrap:wrap; gap:4px 12px; font-size:12px; color:var(--muted); margin-top:4px;}
+  .offer-actions{display:flex; gap:8px; margin-top:11px;}
+  .offer-actions .btn{flex:1; padding:8px 10px;}
+  details.srccopy{margin-top:10px; font-size:13px;}
+  details.srccopy summary{color:var(--muted); cursor:pointer; font-size:12.5px;}
+  details.srccopy pre{
+    white-space:pre-wrap; word-break:break-word; background:var(--bg); border:1px solid var(--border);
+    border-radius:8px; padding:9px; margin-top:6px; font:inherit; color:var(--muted); max-height:200px; overflow:auto;
+  }
+  #fila-more{width:100%; margin-top:4px;}
+
+  /* ===== linhas (posts / grupos / fontes) ===== */
+  .rowitem{
+    display:flex; align-items:center; gap:11px; padding:10px 12px;
+    background:var(--bg2); border:1px solid var(--border); border-radius:10px; margin-bottom:8px;
+  }
+  .rowmain{flex:1; min-width:0;}
+  .rowtitle{font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .rowsub{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .rowerr{font-size:12px; color:var(--red); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;}
+  .pdot{
+    width:24px; height:24px; flex:none; border-radius:50%; display:flex; align-items:center;
+    justify-content:center; font-size:13px; font-weight:800;
+  }
+  .pdot.ok{background:rgba(63,185,80,.15); color:var(--green);}
+  .pdot.fail{background:rgba(248,81,73,.15); color:var(--red);}
+  .chip{
+    font-size:11px; border:1px solid var(--border); border-radius:9px; padding:0 7px; color:var(--muted);
+  }
+
+  /* ===== switch ===== */
+  .switch{position:relative; width:42px; height:24px; flex:none; display:inline-block;}
+  .switch input{opacity:0; width:0; height:0; position:absolute;}
+  .switch i{
+    position:absolute; inset:0; background:var(--bg3); border:1px solid var(--border);
+    border-radius:12px; transition:.15s; cursor:pointer; display:block;
+  }
+  .switch i::after{
+    content:''; position:absolute; top:2px; left:2px; width:18px; height:18px;
+    border-radius:50%; background:var(--muted); transition:.15s;
+  }
+  .switch input:checked + i{background:rgba(63,185,80,.25); border-color:var(--green);}
+  .switch input:checked + i::after{left:20px; background:var(--green);}
+  .switch input:disabled + i{opacity:.5;}
+
+  /* ===== fontes (2 colunas) ===== */
+  .cols{display:grid; grid-template-columns:1fr; gap:18px;}
+  @media (min-width:720px){ .cols{grid-template-columns:1fr 1fr;} }
+  .addform{display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;}
+  .addform input{flex:2 1 120px;}
+  .addform select{flex:1 1 110px; width:auto;}
+  .warn{
+    background:rgba(210,153,34,.1); border:1px solid rgba(210,153,34,.5); color:var(--yellow);
+    border-radius:10px; padding:10px 12px; font-size:13px; margin-bottom:12px;
+  }
+
+  /* ===== form importar ===== */
+  .form label{display:block; font-size:13px; color:var(--muted); margin-bottom:10px;}
+  .form label input, .form label select{margin-top:4px;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
+  details.guide{margin:0 0 12px; border:1px solid var(--border); border-radius:8px; background:rgba(88,166,255,.06);}
+  details.guide>summary{cursor:pointer; padding:9px 12px; font-size:13px; color:var(--blue); list-style:none;}
+  details.guide[open]>summary{border-bottom:1px solid var(--border);}
+  details.guide ol{margin:8px 0; padding:0 16px 8px 30px; font-size:13px; color:var(--text); line-height:1.55;}
+  details.guide li{margin-bottom:5px;}
+  details.guide a{color:var(--blue);}
+  .form .btn{width:100%; margin-top:4px;}
+
+  /* ===== config ===== */
+  .cfg-status{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; font-size:13px;}
+  .st-badge{
+    font-size:12px; font-weight:700; padding:2px 10px; border-radius:10px;
+    border:1px solid var(--border); color:var(--muted); background:var(--bg3); white-space:nowrap;
+  }
+  .st-badge.open{background:rgba(63,185,80,.15); border-color:rgba(63,185,80,.6); color:var(--green);}
+  .st-badge.close{background:rgba(248,81,73,.15); border-color:rgba(248,81,73,.6); color:var(--red);}
+  .st-badge.connecting{background:rgba(210,153,34,.12); border-color:rgba(210,153,34,.6); color:var(--yellow);}
+  .qrbox{
+    text-align:center; margin-top:12px; padding:12px;
+    background:var(--bg); border:1px solid var(--border); border-radius:10px;
+  }
+  .qrbox img{width:240px; max-width:100%; border-radius:8px; background:#fff;}
+  .paircode{font-size:30px; font-weight:800; letter-spacing:.18em; padding:10px 0; word-break:break-all;}
+  label.chkline{display:flex; align-items:center; gap:9px; font-size:14px; color:var(--text); cursor:pointer;}
+  label.chkline input{width:18px; height:18px; flex:none; accent-color:var(--green); margin:0;}
+  .test-res{
+    margin-top:10px; font-size:13px; border:1px solid var(--border); background:var(--bg);
+    border-radius:8px; padding:9px 11px; word-break:break-word;
+  }
+  .test-res.ok{border-color:rgba(63,185,80,.5);}
+  .test-res.err{border-color:rgba(248,81,73,.5); color:var(--red);}
+  .cfg-note{font-size:13px; color:var(--muted); margin-bottom:12px;}
+  #bc-instances-wrap{
+    display:flex; flex-wrap:wrap; gap:8px; padding:10px 12px; min-height:46px;
+    background:var(--bg); border:1px solid var(--border); border-radius:8px;
+    align-items:center; margin-top:4px;
+  }
+  .inst-chip{
+    display:inline-flex; align-items:center; gap:7px; padding:6px 13px;
+    border-radius:20px; cursor:pointer; font-size:13px; font-weight:600;
+    border:1.5px solid var(--border); background:var(--bg3); color:var(--muted);
+    user-select:none; transition:border-color .15s, background .15s, color .15s;
+  }
+  .inst-chip:hover{border-color:var(--blue); color:var(--text);}
+  .inst-chip.selected{border-color:var(--blue); background:rgba(88,166,255,.13); color:var(--text);}
+  .inst-chip .idot{width:8px; height:8px; border-radius:50%; flex:none;}
+  .inst-chip .idot.open{background:var(--green);}
+  .inst-chip .idot.close{background:var(--red); opacity:.7;}
+  .inst-chip .istate{font-size:11px; font-weight:400; color:var(--muted); margin-left:2px;}
+  .cfg-subtitle{font-size:13.5px; font-weight:700; margin:6px 0 10px;}
+
+  /* ===== seletor de grupos do WhatsApp ===== */
+  label.rowitem.pick{cursor:pointer; -webkit-tap-highlight-color:transparent;}
+  label.rowitem.pick input{width:18px; height:18px; flex:none; accent-color:var(--green); margin:0;}
+  #wa-groups-list{max-height:340px; overflow:auto;}
+
+  /* ===== toasts ===== */
+  #toasts{
+    position:fixed; bottom:14px; left:12px; right:12px; z-index:300;
+    display:flex; flex-direction:column; gap:8px; pointer-events:none;
+  }
+  @media (min-width:600px){ #toasts{left:auto; width:340px;} }
+  .toast{
+    background:var(--bg3); border:1px solid var(--border); border-left:4px solid var(--green);
+    color:var(--text); padding:11px 13px; border-radius:9px; font-size:13.5px;
+    box-shadow:0 6px 22px rgba(0,0,0,.55); animation:toastin .2s ease; word-break:break-word;
+  }
+  .toast.err{border-left-color:var(--red);}
+  .toast.out{opacity:0; transition:opacity .3s;}
+  @keyframes toastin{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+</style>
+</head>
+<body>
+
+<!-- ===== tela de token ===== -->
+<div id="login" class="login hidden">
+  <form id="login-form" class="login-box">
+    <h1>🏋️ AFFILIATE</h1>
+    <p>Informe o token de admin (<code>ADMIN_TOKEN</code> do .env) para acessar o painel.</p>
+    <p id="login-msg" class="login-err hidden"></p>
+    <input type="password" id="login-token" placeholder="x-admin-token" autocomplete="current-password" required>
+    <button class="btn btn-primary" type="submit">Entrar</button>
+  </form>
+</div>
+
+<!-- ===== app ===== -->
+<div id="app" class="hidden">
+  <header>
+    <div class="hdr-row">
+      <span id="status-dot" class="dot" title="carregando"></span>
+      <div class="hdr-info">
+        <div class="hdr-title">AFFILIATE</div>
+        <div class="hdr-sub" id="hdr-sub">carregando…</div>
+      </div>
+      <button id="btn-refresh" class="btn btn-ghost" type="button" title="Atualizar">⟳</button>
+      <button id="btn-pause" class="btn" type="button">…</button>
+    </div>
+    <div class="hdr-stats" id="hdr-stats"></div>
+    <div class="health-strip" id="health-strip"></div>
+    <div class="queue-warn hidden" id="queue-warn"></div>
+    <nav class="tabs" id="tabs">
+      <button type="button" class="tab active" data-tab="fila">Fila <span class="cnt" id="cnt-fila"></span></button>
+      <button type="button" class="tab" data-tab="posts">Posts</button>
+      <button type="button" class="tab" data-tab="grupos">Grupos</button>
+      <button type="button" class="tab" data-tab="fontes">Fontes</button>
+      <button type="button" class="tab" data-tab="importar">Importar ML</button>
+      <button type="button" class="tab" data-tab="disparos">Disparos</button>
+      <button type="button" class="tab" data-tab="aquecedor">Aquecedor</button>
+      <button type="button" class="tab" data-tab="config">Config</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- FILA -->
+    <section id="tab-fila">
+      <div class="card" id="next-card">
+        <h2 style="margin-bottom:4px;">🔀 Próximos a postar (mix 70/20/10)</h2>
+        <p class="cfg-note" id="next-note" style="margin-bottom:10px;">
+          A lista completa abaixo está ordenada por <b>score</b>; o que vai pros grupos segue este mix.
+        </p>
+        <div id="next-summary" class="badges" style="margin-bottom:10px;"></div>
+        <div id="next-list"><p class="empty">carregando…</p></div>
+      </div>
+      <div class="toolbar">
+        <select id="fila-status" title="filtro de status">
+          <option value="pending" selected>Pendentes</option>
+          <option value="posted">Postadas</option>
+          <option value="rejected">Rejeitadas</option>
+          <option value="expired">Expiradas</option>
+          <option value="skipped">Puladas</option>
+          <option value="all">Todas</option>
+        </select>
+        <span id="fila-total" class="muted" style="font-size:13px;"></span>
+      </div>
+      <div id="fila-list"><p class="empty">carregando…</p></div>
+      <button id="fila-more" class="btn btn-ghost hidden" type="button">Carregar mais</button>
+    </section>
+
+    <!-- POSTS -->
+    <section id="tab-posts" class="hidden">
+      <div id="posts-list"><p class="empty">carregando…</p></div>
+    </section>
+
+    <!-- GRUPOS -->
+    <section id="tab-grupos" class="hidden">
+      <div class="card">
+        <h2>📱 Escolher grupos do WhatsApp</h2>
+        <p class="cfg-note">Carrega <b>todos</b> os grupos do número conectado pra você marcar exatamente quais recebem as ofertas.</p>
+        <button id="btn-wa-groups" class="btn btn-primary" type="button" style="width:100%;">Escolher grupos do WhatsApp</button>
+        <div id="wa-picker" class="hidden">
+          <div class="toolbar" style="margin-top:12px; margin-bottom:8px;">
+            <input id="wa-filter" placeholder="filtrar por nome…">
+            <span id="wa-sel-count" class="muted" style="font-size:13px; flex:none;"></span>
+          </div>
+          <div id="wa-groups-list"></div>
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <button id="btn-wa-save" class="btn btn-green" type="button" style="flex:1;">Salvar seleção</button>
+            <button id="btn-wa-cancel" class="btn btn-ghost" type="button">Fechar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card form">
+        <h2>➕ Criar grupos espelho</h2>
+        <p class="cfg-note">Cria grupos novos já no modo <b>“só admins postam”</b> (menos denúncia) e te adiciona neles. Precisa do WhatsApp conectado e do número do dono salvo (card Config → WhatsApp).</p>
+        <div class="row2">
+          <label>Nome base
+            <input id="cg-prefix" value="Achadinhos Fitness" placeholder="Achadinhos Fitness">
+          </label>
+          <label>Quantos
+            <input id="cg-n" type="number" min="1" max="20" step="1" value="5" inputmode="numeric">
+          </label>
+        </div>
+        <button id="btn-cg-create" class="btn btn-primary" type="button">Criar grupos</button>
+        <p class="cfg-note" id="cg-result" style="margin-top:8px;"></p>
+      </div>
+
+      <details class="card" style="padding:10px 14px;">
+        <summary class="muted" style="cursor:pointer; font-size:13px;">Alternativa: sincronizar por prefixo do nome</summary>
+        <div class="toolbar" style="margin-top:10px; margin-bottom:2px;">
+          <input id="sync-prefix" value="Achadinhos" placeholder="prefixo do nome do grupo">
+          <button id="btn-sync" class="btn" type="button">Sincronizar grupos</button>
+        </div>
+      </details>
+
+      <div id="groups-list"><p class="empty">carregando…</p></div>
+    </section>
+
+    <!-- FONTES -->
+    <section id="tab-fontes" class="hidden">
+      <div class="card form" style="margin-bottom:14px;">
+        <h2>🔄 Buscar ofertas agora</h2>
+        <p class="cfg-note">Puxa ofertas da Shopee na hora (normalmente roda sozinho de 3 em 3h). Use depois de adicionar uma keyword nova ou corrigir as credenciais da Shopee.</p>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <button id="btn-source-now" class="btn btn-primary" type="button">Buscar ofertas agora</button>
+          <span id="source-last" class="muted" style="font-size:13px;"></span>
+        </div>
+        <p class="cfg-note" id="source-result" style="margin-top:8px;"></p>
+      </div>
+      <div class="cols">
+        <div>
+          <h2>🔎 Keywords (Shopee)</h2>
+          <form id="kw-form" class="addform">
+            <input id="kw-term" placeholder="termo, ex.: corda de pular" required>
+            <select id="kw-cat">
+              <option value="geral" selected>geral</option>
+              <option value="suplementos">suplementos</option>
+              <option value="roupas">roupas</option>
+              <option value="calcados">calcados</option>
+              <option value="equipamentos">equipamentos</option>
+            </select>
+            <button class="btn btn-primary" type="submit">Adicionar</button>
+          </form>
+          <div id="kw-list"><p class="empty">carregando…</p></div>
+        </div>
+        <div>
+          <h2>📣 Canais Telegram</h2>
+          <div id="tg-warn" class="warn hidden">⚠️ monitor do Telegram não configurado no .env</div>
+          <form id="ch-form" class="addform">
+            <input id="ch-user" placeholder="@canaldepromos" required>
+            <button class="btn btn-primary" type="submit">Adicionar</button>
+          </form>
+          <div id="ch-list"><p class="empty">carregando…</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- IMPORTAR ML -->
+    <section id="tab-importar" class="hidden">
+      <form id="ml-form" class="card form">
+        <h2>🛍️ Importar oferta do Mercado Livre</h2>
+        <p class="muted" style="font-size:13px; margin-bottom:12px;">
+          Gere o link no portal de afiliados do ML (<code>mercadolivre.com/sec/…</code>) e cole aqui.
+          Suplementos são <b>proibidos</b> no programa de afiliados do ML.
+        </p>
+        <label>Título
+          <input id="ml-title" required placeholder="Halteres Ajustáveis 20kg">
+        </label>
+        <label>Link de afiliado (do portal)
+          <input id="ml-url" type="url" required placeholder="https://mercadolivre.com/sec/abc123">
+        </label>
+        <div class="row2">
+          <label>Preço “Por” (R$)
+            <input id="ml-price" type="number" step="0.01" min="0.01" inputmode="decimal" required placeholder="189.90">
+          </label>
+          <label>Preço “De” (opcional)
+            <input id="ml-pricefrom" type="number" step="0.01" min="0" inputmode="decimal" placeholder="299.90">
+          </label>
+        </div>
+        <label>URL da imagem (opcional)
+          <input id="ml-img" type="url" placeholder="https://http2.mlstatic.com/....jpg">
+        </label>
+        <label>Categoria
+          <select id="ml-cat">
+            <option value="geral" selected>geral</option>
+            <option value="roupas">roupas</option>
+            <option value="calcados">calcados</option>
+            <option value="equipamentos">equipamentos</option>
+          </select>
+        </label>
+        <button id="ml-submit" class="btn btn-primary" type="submit">Importar oferta</button>
+      </form>
+
+      <div class="card">
+        <h2>🧪 Teste geral</h2>
+        <p class="muted" style="font-size:13px; margin-bottom:12px;">
+          Gera a copy da melhor oferta pendente e envia <b>só pro seu WhatsApp</b> (não marca como postada).
+        </p>
+        <button id="btn-test" class="btn" type="button" style="width:100%;">Enviar test-post pro meu WhatsApp</button>
+      </div>
+    </section>
+
+    <!-- DISPAROS -->
+    <section id="tab-disparos" class="hidden">
+      <div class="warn" style="margin-bottom:12px;">
+        ⚠️ <b>Disparo 1-a-1 não-oficial</b> (convite pro grupo). Viola o ToS do WhatsApp e
+        <b>arrisca banir o número</b>, ainda mais em lista fria (+ LGPD sem consentimento).
+        Use um <b>chip queimável dedicado</b> — <b>NUNCA</b> o número do sistema (affiliate-fitness).
+        Anti-ban: espaçamento grande, teto/dia com ramp, opt-out automático (resposta "parar/sair").
+      </div>
+
+      <div class="card form">
+        <h2>🚀 Status dos disparos</h2>
+        <div id="bc-status" class="cfg-status"><span class="muted">carregando…</span></div>
+        <div id="bc-fail-detail" class="cfg-note" style="margin:6px 0;"></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="btn-bc-resume" class="btn btn-primary" type="button">▶️ Iniciar disparos</button>
+          <button id="btn-bc-pause" class="btn btn-danger-ghost" type="button">⏸️ Pausar</button>
+          <button id="btn-bc-refresh" class="btn" type="button">Atualizar</button>
+        </div>
+      </div>
+
+      <div class="card form">
+        <h2>⚙️ Configuração</h2>
+        <p class="cfg-note">⚡ Tudo aqui vale <b>na hora</b> que você salva — sem reiniciar nada.</p>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:13px; color:var(--muted); margin-bottom:4px;">
+            Instâncias de disparo
+            <span class="muted"> — clique para selecionar, rodízio automático entre as ativas</span>
+          </div>
+          <div id="bc-instances-wrap"><span class="muted" style="font-size:13px;">carregando…</span></div>
+          <button id="btn-bc-instance-reload" class="btn" type="button" style="margin-top:8px; font-size:13px; padding:6px 12px;">↺ Atualizar lista</button>
+        </div>
+        <label>Links de convite <span class="muted">— 1 por linha. O sistema <b>reveza</b> entre eles a cada envio pra distribuir a galera nos grupos.</span>
+          <textarea id="bc-links" rows="3" placeholder="https://chat.whatsapp.com/AAAA&#10;https://chat.whatsapp.com/BBBB"></textarea>
+        </label>
+        <label>Mensagens (1 por linha) <span class="muted">— sorteia uma a cada envio. Use <code>{link}</code> e <code>{nome}</code></span>
+          <textarea id="bc-messages" rows="5" placeholder="Oi{nome}! Entra no nosso grupo de ofertas fitness 👇 {link}"></textarea>
+        </label>
+
+        <p class="cfg-subtitle">Limites e horários (anti-ban)</p>
+        <label>Disparos por dia
+          <input id="bc-perday" type="number" min="1" step="1" inputmode="numeric" placeholder="ex.: 200">
+        </label>
+        <label class="bc-check" title="Disponível a partir de 2 disparos por dia" style="display:flex; align-items:center; gap:8px; margin:6px 0;">
+          <input id="bc-warmup" type="checkbox" style="width:auto; margin:0;">
+          <span>Aquecimento gradual <span class="muted">— começa baixo e sobe ao longo de ~4 semanas (recomendado, ainda mais em chip novo)</span></span>
+        </label>
+        <p class="cfg-note">Plano: <span id="bc-plan" class="muted">—</span></p>
+        <div class="row2">
+          <label>Espaçamento — mínimo (segundos)
+            <input id="bc-space-min" type="number" min="1" step="1" inputmode="numeric" placeholder="45">
+          </label>
+          <label>Espaçamento — máximo (segundos)
+            <input id="bc-space-max" type="number" min="1" step="1" inputmode="numeric" placeholder="150">
+          </label>
+        </div>
+        <p class="cfg-note muted">Sorteia um tempo entre o mínimo e o máximo a cada envio. Quanto maior, mais seguro contra ban.</p>
+        <div class="row2">
+          <label>Horário — começa
+            <input id="bc-win-start" type="time">
+          </label>
+          <label>Horário — termina
+            <input id="bc-win-end" type="time">
+          </label>
+        </div>
+
+        <p class="cfg-note">Em uso agora: <span id="bc-cadence" class="muted">—</span></p>
+        <button id="btn-bc-save" class="btn btn-primary" type="button">Salvar config</button>
+
+        <hr style="border:none; border-top:1px solid var(--border,#333); margin:16px 0;">
+        <h3 style="margin:0 0 6px;">💬 Boas-vindas e feedback de saída (DM)</h3>
+        <p class="cfg-note">Quando alguém <b>entra</b> num grupo nosso, manda uma DM de boas-vindas no privado; quando <b>sai</b>, pergunta o motivo e guarda a resposta. Só age sobre quem já está na base de contatos (conversa aberta) — nunca expõe ninguém no grupo. <b>⚠️ Use com o número saudável</b> (adiciona tráfego de DM ao mesmo número dos disparos).</p>
+        <label style="display:flex; align-items:center; gap:8px;">
+          <input id="bc-groupdm" type="checkbox" style="width:auto; margin:0;">
+          Ativar boas-vindas ao entrar / feedback ao sair
+        </label>
+        <label>Texto de boas-vindas <span class="muted">— use <code>{nome}</code> (vira " Fulano" ou nada). Vazio = padrão embutido.</span>
+          <textarea id="bc-welcome" rows="3" placeholder="(deixe vazio pra usar o padrão)"></textarea>
+        </label>
+        <label>Pergunta ao sair <span class="muted">— use <code>{nome}</code>. A resposta do contato é gravada como motivo. Vazio = padrão embutido.</span>
+          <textarea id="bc-exit" rows="3" placeholder="(deixe vazio pra usar o padrão)"></textarea>
+        </label>
+        <button id="btn-bc-dm-save" class="btn btn-primary" type="button">Salvar boas-vindas/feedback</button>
+      </div>
+
+      <div class="card form">
+        <h2>📇 Importar contatos</h2>
+        <p class="cfg-note">1 contato por linha (aceita "nome, telefone" ou só o número). Deduplicado; não reativa opt-out. Pra base grande (milhares), use o <b>arquivo CSV/TXT</b>.</p>
+        <label>Arquivo CSV/TXT
+          <input type="file" id="bc-file" accept=".csv,.txt,text/csv,text/plain">
+        </label>
+        <button id="btn-bc-file-import" class="btn btn-primary" type="button">Importar arquivo</button>
+        <p class="cfg-note muted" style="margin:10px 0 4px;">— ou cole abaixo —</p>
+        <textarea id="bc-import" rows="6" placeholder="5519999999999&#10;Maria, (19) 98888-7777&#10;11977776666"></textarea>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
+          <button id="btn-bc-import" class="btn btn-primary" type="button">Importar</button>
+          <button id="btn-bc-clear" class="btn btn-danger-ghost" type="button">Limpar fila (pending/falhas)</button>
+        </div>
+        <p class="cfg-note" id="bc-import-result"></p>
+      </div>
+
+      <div class="card form">
+        <h2>🧪 Teste</h2>
+        <p class="cfg-note">Envia 1 convite agora pro número informado (ignora fila/teto/pausa) — pra você ver a mensagem chegando.</p>
+        <div class="row2">
+          <label>Número de teste
+            <input id="bc-test-number" placeholder="5519...">
+          </label>
+          <label style="display:flex; align-items:flex-end;">
+            <button id="btn-bc-test" class="btn" type="button" style="width:100%;">Enviar teste</button>
+          </label>
+        </div>
+        <p class="cfg-note" id="bc-test-result"></p>
+      </div>
+    </section>
+
+    <!-- CONFIG -->
+    <section id="tab-aquecedor" class="hidden">
+      <div class="warn" style="margin-bottom:12px;">
+        🔥 <b>Aquecedor de chips.</b> Faz as instâncias conectadas conversarem entre si (mesh),
+        contínuo, até você desligar aqui. Use chips dedicados ao aquecimento.
+      </div>
+
+      <div class="card form">
+        <h2>🔥 Status do aquecedor</h2>
+        <div id="wm-status" class="cfg-status"><span class="muted">carregando…</span></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+          <button id="btn-wm-on" class="btn btn-primary" type="button">▶️ Ligar</button>
+          <button id="btn-wm-off" class="btn btn-danger-ghost" type="button">⏸️ Desligar</button>
+          <button id="btn-wm-refresh" class="btn" type="button">Atualizar</button>
+        </div>
+      </div>
+
+      <div class="card form">
+        <h2>⚙️ Configuração</h2>
+        <p class="cfg-note">⚡ Vale na hora que você salva. Espaçamento menor = mais conversa.</p>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:13px; color:var(--muted); margin-bottom:4px;">
+            Chips do aquecedor <span class="muted">— marque só os chips dedicados. Nenhum marcado = usa TODOS os conectados (inclui pessoal!).</span>
+          </div>
+          <div id="wm-instances-wrap"><span class="muted" style="font-size:13px;">carregando…</span></div>
+        </div>
+        <div class="row2">
+          <label>Espaçamento — mínimo (segundos)
+            <input id="wm-space-min" type="number" min="1" step="1" inputmode="numeric" placeholder="20">
+          </label>
+          <label>Espaçamento — máximo (segundos)
+            <input id="wm-space-max" type="number" min="1" step="1" inputmode="numeric" placeholder="120">
+          </label>
+        </div>
+        <label>Janela horária <span class="muted">— formato HH:MM-HH:MM</span>
+          <input id="wm-window" type="text" placeholder="07:00-23:00">
+        </label>
+        <div class="row2">
+          <label>Teto por chip/dia <span class="muted">— 0 = sem limite</span>
+            <input id="wm-cap" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
+          </label>
+          <label>Dias de ramp <span class="muted">— 0 = desligado</span>
+            <input id="wm-ramp" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
+          </label>
+        </div>
+        <button id="btn-wm-save" class="btn btn-primary" type="button" style="margin-top:8px;">Salvar configuração</button>
+      </div>
+
+      <div class="card form">
+        <h2>🎯 Aquecer número da API oficial</h2>
+        <p class="cfg-note">Manda os chips do aquecedor conversarem com um número de fora do mesh (ex.: número novo na API oficial da Meta), pra ele "esquentar" recebendo mensagens de entrada.</p>
+        <div class="row2">
+          <label>Número (DDI+DDD+número)
+            <input id="wm-target-number" inputmode="tel" placeholder="5519999999999">
+          </label>
+          <label style="display:flex; align-items:flex-end;">
+            <button id="btn-wm-blast" class="btn" type="button" style="width:100%;">📨 Disparar agora com todos os chips</button>
+          </label>
+        </div>
+        <p class="cfg-note" id="wm-blast-result"></p>
+
+        <div style="margin-top:14px;">
+          <div style="font-size:13px; color:var(--muted); margin-bottom:4px;">
+            Lista contínua <span class="muted">— esses números entram no ciclo do aquecedor e recebem mensagens ao longo do dia, junto com o mesh entre chips.</span>
+          </div>
+          <div class="row2">
+            <label>Adicionar à lista contínua
+              <input id="wm-target-add" inputmode="tel" placeholder="5519999999999">
+            </label>
+            <label style="display:flex; align-items:flex-end;">
+              <button id="btn-wm-target-add" class="btn" type="button" style="width:100%;">+ Adicionar</button>
+            </label>
+          </div>
+          <div id="wm-targets-wrap" style="margin-top:8px;"><span class="muted" style="font-size:13px;">carregando…</span></div>
+        </div>
+      </div>
+    </section>
+    <section id="tab-config" class="hidden">
+
+      <!-- WhatsApp -->
+      <div class="card form">
+        <h2>📱 WhatsApp (instância)</h2>
+        <div id="wa-status" class="cfg-status"><span class="muted">carregando…</span></div>
+        <label style="margin-top:10px;">Instância ativa <span class="muted">— a que posta nos grupos e recebe webhook. Troca <b>na hora</b>, sem reiniciar.</span>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <select id="wa-instance-select" style="flex:1;"><option value="">carregando…</option></select>
+            <button id="btn-wa-instance-reload" class="btn" type="button" title="Atualizar lista">↺</button>
+          </div>
+        </label>
+        <button id="btn-wa-instance-switch" class="btn btn-primary" type="button" style="margin-top:8px;">Trocar instância ativa</button>
+        <p class="cfg-note">Se o WhatsApp principal cair, escolha o chip secundário aqui e clique em trocar — os próximos posts nos grupos já saem por ele. <b>Não afeta</b> as instâncias das abas Disparos/Aquecedor — troque-as lá se também precisarem mudar de chip.</p>
+        <button id="btn-wa-instance" class="btn" type="button" style="margin-top:14px;">Criar/conectar instância</button>
+        <div id="wa-qr" class="qrbox hidden">
+          <p class="muted" style="font-size:13px; margin-bottom:8px;">
+            Escaneie com o WhatsApp do chip dedicado (Aparelhos conectados). Atualiza sozinho a cada 20s.
+          </p>
+          <div id="wa-qr-content"><p class="muted">carregando QR…</p></div>
+        </div>
+        <label style="margin-top:14px;">Número do dono (recebe resumos e envia comandos)
+          <input id="wa-owner" inputmode="tel" placeholder="5519999999999">
+        </label>
+        <button id="btn-wa-owner" class="btn" type="button">Salvar número do dono</button>
+      </div>
+
+      <!-- Shopee -->
+      <div class="card form">
+        <h2>🛒 Shopee (Open API de afiliados)</h2>
+        <label>App ID
+          <input id="sp-appid" inputmode="numeric" placeholder="ex.: 18012345678">
+        </label>
+        <label>App Secret
+          <input id="sp-secret" type="password" autocomplete="new-password" placeholder="cole o App Secret">
+        </label>
+        <p id="sp-secret-hint" class="muted hidden" style="font-size:12px; margin:-4px 0 10px;"></p>
+        <div class="row2">
+          <button id="btn-sp-save" class="btn btn-primary" type="button">Salvar</button>
+          <button id="btn-sp-test" class="btn" type="button">Testar conexão</button>
+        </div>
+        <div id="sp-test-result"></div>
+      </div>
+
+      <!-- Mercado Livre -->
+      <div class="card form">
+        <h2>🛍️ Mercado Livre (afiliados)</h2>
+        <p class="cfg-note">
+          O ML <b>não tem API oficial de afiliados</b>: gere um link no portal de afiliados
+          e cole abaixo pra extrair seus parâmetros (<code>matt_word</code>/<code>matt_tool</code>).
+        </p>
+        <label>Cole um link de afiliado do portal
+          <input id="meli-link" type="url" placeholder="https://mercadolivre.com/sec/abc123">
+        </label>
+        <button id="btn-meli-extract" class="btn" type="button">Extrair</button>
+        <div class="row2" style="margin-top:10px;">
+          <label>matt_word
+            <input id="meli-word" placeholder="seunome20...">
+          </label>
+          <label>matt_tool
+            <input id="meli-tool" placeholder="88...">
+          </label>
+        </div>
+        <label class="chkline" style="margin-bottom:10px;">
+          <input type="checkbox" id="meli-auto">
+          <span>Conversão automática de links (matt_word/matt_tool)</span>
+        </label>
+        <div class="warn">
+          ⚠️ <b>Atenção:</b> a conversão automática <b>viola os Termos do programa de afiliados do ML</b> —
+          risco de comissões zeradas ou banimento. A importação manual de links do portal continua 100% segura.
+        </div>
+
+        <p class="cfg-subtitle" style="margin-top:14px;">Link oficial via portal (createLink)</p>
+        <p class="cfg-note">
+          Gera o link <b>oficial s.click do ML</b> usando sua <b>sessão logada</b> no portal de afiliados
+          (cookie + x-csrf-token). É tentado <b>antes</b> do matt_word/tool. ⚠️ Endpoint interno —
+          <b>zona cinzenta de T&C, risco de suspensão da conta</b>; use ciente.
+        </p>
+        <details class="guide">
+          <summary>📖 Jeito fácil: extensão de Chrome (captura o cookie sozinha)</summary>
+          <ol>
+            <li><a href="/ext/ml-session.zip" target="_blank" rel="noopener">Baixe a extensão</a> e descompacte numa pasta.</li>
+            <li>Abra <code>chrome://extensions</code>, ligue o <b>Modo desenvolvedor</b> e clique em <b>“Carregar sem compactação”</b> apontando pra pasta.</li>
+            <li>No popup da extensão, preencha a URL do painel + a senha (ADMIN_TOKEN) + seu tag.</li>
+            <li>Faça login no <b>portal de afiliados do ML</b> e gere <b>1 link</b> — a extensão captura o cookie/csrf.</li>
+            <li>Clique em <b>“Enviar sessão pro painel”</b>. Pronto: o cookie/csrf chegam aqui sozinhos.</li>
+          </ol>
+          <p style="padding:0 12px 10px; font-size:12.5px; color:var(--muted);">Sem a extensão, dá pra colar o <code>Cookie:</code> e o <code>x-csrf-token</code> manualmente abaixo (DevTools → aba Network → requisição do portal).</p>
+        </details>
+        <label>Cookie da sessão <span class="muted">(cole o header <code>Cookie:</code> do navegador logado)</span>
+          <textarea id="meli-cookie" rows="2" placeholder="_csrf=...; ssid=...; SessionId=..."></textarea>
+        </label>
+        <div class="row2">
+          <label>x-csrf-token
+            <input id="meli-csrf" type="password" autocomplete="off" placeholder="emparelhado ao _csrf">
+          </label>
+          <label>tag/canal de divulgação
+            <input id="meli-tag" placeholder="seu_canal">
+          </label>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin:6px 0;">
+          <button id="btn-meli-save" class="btn btn-primary" type="button">Salvar</button>
+          <button id="btn-meli-testlink" class="btn" type="button">Testar gerar link</button>
+        </div>
+        <p class="cfg-note" id="meli-testlink-result"></p>
+      </div>
+
+      <!-- Amazon -->
+      <div class="card form">
+        <h2>📦 Amazon (Associados)</h2>
+        <p class="cfg-note">
+          Link de afiliado = URL <code>/dp/ASIN</code> + <code>?tag=</code>. Sem API, sem segredo —
+          só o seu <b>tag de associado</b>. Funciona no auto-link do Telegram e no import manual.
+        </p>
+        <label>Tag de associado
+          <input id="amazon-tag" placeholder="axelot-20">
+        </label>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin:6px 0;">
+          <button id="btn-amazon-save" class="btn btn-primary" type="button">Salvar</button>
+          <button id="btn-amazon-test" class="btn" type="button">Testar / ver exemplo</button>
+        </div>
+        <div id="amazon-test-result"></div>
+      </div>
+
+      <!-- AliExpress -->
+      <div class="card form">
+        <h2>🧧 AliExpress (Portals)</h2>
+        <p class="cfg-note">
+          API oficial de afiliados. Crie um App em <b>openservice.aliexpress.com</b> (permissão Affiliate)
+          e um <b>tracking_id</b> no Portals. O <code>app_secret</code> fica só no servidor (mascarado).
+        </p>
+        <div class="row2">
+          <label>app_key
+            <input id="ali-key" placeholder="5012345">
+          </label>
+          <label>tracking_id
+            <input id="ali-tid" placeholder="default ou o seu">
+          </label>
+        </div>
+        <label>app_secret
+          <input id="ali-secret" type="password" autocomplete="off" placeholder="sk...">
+        </label>
+        <p class="cfg-note hidden" id="ali-secret-hint"></p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
+          <button id="btn-ali-save" class="btn btn-primary" type="button">Salvar</button>
+          <button id="btn-ali-test" class="btn" type="button">Testar (gerar link)</button>
+        </div>
+        <p class="cfg-note" id="ali-test-result"></p>
+      </div>
+
+      <!-- Instagram (auto-post das ofertas) -->
+      <div class="card form">
+        <h2>📸 Instagram (auto-post das ofertas)</h2>
+        <div id="ig-status" class="cfg-status"><span class="muted">carregando…</span></div>
+        <p class="cfg-note">
+          Posta as ofertas no <b>feed</b> da sua conta <b>Business/Creator</b> pela API <b>oficial</b> (sem risco de ban).
+          Setup único: crie um app em <b>developers.facebook.com</b> → produto <b>“Instagram API with Instagram Login”</b>,
+          pegue o <b>App ID</b> e <b>App Secret</b>, registre a URL pública (abaixo) + <code>/api/instagram/oauth/callback</code>
+          como Redirect URI, e adicione sua conta como <b>Instagram Tester</b>.
+        </p>
+        <details class="guide">
+          <summary>📖 Passo a passo: App ID, Secret e Redirect URI</summary>
+          <ol>
+            <li>Abra <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener noreferrer">developers.facebook.com/apps</a> e crie um app.</li>
+            <li>Adicione o produto <b>“Instagram API with Instagram Login”</b> (não o “Basic Display”, descontinuado).</li>
+            <li>Em <b>API setup with Instagram login</b>, copie o <b>App ID</b> e o <b>App Secret</b> e cole abaixo.</li>
+            <li>Nas permissões, deixe <code>instagram_business_basic</code> e <code>instagram_business_content_publish</code>.</li>
+            <li>Cole o <b>Redirect URI</b> mostrado abaixo (botão “Copiar”) nas configurações de login do app.</li>
+            <li>Adicione seu perfil como <b>Instagram Tester</b> e <b>aceite o convite</b> no Instagram (web → Config → Apps e sites).</li>
+            <li>A conta precisa ser <b>Profissional</b> (Business/Creator) e <b>pública</b>.</li>
+          </ol>
+        </details>
+
+        <p class="cfg-subtitle">1) App do Meta + URL pública</p>
+        <div class="row2">
+          <label>Instagram App ID
+            <input id="ig-appid" placeholder="178414...">
+          </label>
+          <label>App Secret
+            <input id="ig-appsecret" type="password" autocomplete="off" placeholder="••••••">
+          </label>
+        </div>
+        <label>URL pública (HTTPS, alcançável pela Meta)
+          <input id="ig-baseurl" type="url" autocomplete="off" placeholder="https://seu-dominio.ngrok-free.dev">
+        </label>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:4px 0 8px;">
+          <span class="cfg-note muted" id="ig-redirect-hint" style="margin:0;"></span>
+          <button id="btn-ig-copy-redirect" class="btn btn-ghost" type="button" style="font-size:12px; padding:4px 9px;">Copiar Redirect URI</button>
+        </div>
+        <button id="btn-ig-app-save" class="btn btn-primary" type="button">Salvar app</button>
+
+        <p class="cfg-subtitle" style="margin-top:14px;">2) Conectar a conta</p>
+        <p class="cfg-note">Recomendado: conecte via login — abre o Instagram numa nova aba e volta sozinho com o token.</p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="btn-ig-connect" class="btn btn-primary" type="button">🔗 Conectar com Instagram</button>
+          <button id="btn-ig-test" class="btn" type="button">Verificar conexão</button>
+          <button id="btn-ig-disconnect" class="btn" type="button">Desconectar</button>
+        </div>
+        <p class="cfg-note muted" style="margin:10px 0 4px;">— ou cole um token long-lived manualmente —</p>
+        <label>Access token (long-lived)
+          <input id="ig-token" type="password" autocomplete="off" placeholder="IGAA...">
+        </label>
+        <button id="btn-ig-token-save" class="btn" type="button">Validar e salvar token</button>
+        <p class="cfg-note" id="ig-test-result"></p>
+
+        <p class="cfg-subtitle" style="margin-top:14px;">3) Postagem automática</p>
+        <label class="chkline" style="margin-bottom:10px;">
+          <input type="checkbox" id="ig-enabled">
+          <span>Postar ofertas automaticamente no feed</span>
+        </label>
+        <label>Legenda <span class="muted">(<code>{titulo}</code> <code>{preco_bloco}</code> <code>{link}</code> <code>{hashtags}</code>)</span>
+          <textarea id="ig-caption" rows="5"></textarea>
+        </label>
+        <label>Hashtags
+          <input id="ig-hashtags" placeholder="#achadinhos #fitness #academia ...">
+        </label>
+        <div class="row2">
+          <label>A cada (horas)
+            <input id="ig-every" inputmode="numeric" placeholder="3">
+          </label>
+          <label>Máx por dia <span class="muted">— teto da API é 25/dia, não dá pra passar disso</span>
+            <input id="ig-cap" type="number" min="1" max="25" inputmode="numeric" placeholder="8">
+          </label>
+        </div>
+        <label>Score mínimo <span class="muted">(0 = usa o piso geral do ranking)</span>
+          <input id="ig-minscore" inputmode="numeric" placeholder="0">
+        </label>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
+          <button id="btn-ig-save" class="btn btn-primary" type="button">Salvar postagem</button>
+          <button id="btn-ig-run" class="btn" type="button">Postar 1 agora (teste)</button>
+        </div>
+        <p class="cfg-note" id="ig-run-result"></p>
+      </div>
+
+      <!-- Telegram -->
+      <div class="card form">
+        <h2>📣 Telegram (monitor de canais)</h2>
+        <div id="tg-status" class="cfg-status"><span class="muted">carregando…</span></div>
+        <div id="tg-step1">
+          <p class="cfg-note">
+            Passo 1 — crie um app em
+            <a href="https://my.telegram.org" target="_blank" rel="noopener noreferrer">my.telegram.org</a>
+            (API development tools) pra obter o <code>api_id</code> e o <code>api_hash</code>.
+          </p>
+          <details class="guide">
+            <summary>📖 Como obter api_id e api_hash</summary>
+            <ol>
+              <li>Acesse <a href="https://my.telegram.org" target="_blank" rel="noopener noreferrer">my.telegram.org</a> e entre com o <b>mesmo número</b> que você vai usar no monitor.</li>
+              <li>Clique em <b>API development tools</b>.</li>
+              <li>Preencha um título qualquer (ex.: “afiliados”) e plataforma “Other”, e clique em <b>Create application</b>.</li>
+              <li>Copie o <b>App api_id</b> (número) e o <b>App api_hash</b> (texto) e cole abaixo.</li>
+              <li>No passo seguinte, o Telegram manda um código no app — digite aqui pra concluir o login.</li>
+            </ol>
+          </details>
+          <form id="tg-form1">
+            <div class="row2">
+              <label>api_id
+                <input id="tg-apiid" inputmode="numeric" placeholder="123456" required>
+              </label>
+              <label>api_hash
+                <input id="tg-apihash" type="password" autocomplete="off" placeholder="abcdef0123..." required>
+              </label>
+            </div>
+            <label>Telefone (com DDI)
+              <input id="tg-phone" inputmode="tel" placeholder="+5519999999999" required>
+            </label>
+            <button class="btn btn-primary" type="submit">Enviar código</button>
+          </form>
+        </div>
+        <form id="tg-step2" class="hidden">
+          <p class="cfg-note">Passo 2 — digite o código que chegou no app do Telegram.</p>
+          <label>Código recebido
+            <input id="tg-code" inputmode="numeric" autocomplete="one-time-code" placeholder="12345" required>
+          </label>
+          <button class="btn btn-primary" type="submit">Confirmar</button>
+        </form>
+        <form id="tg-step2b" class="hidden">
+          <p class="cfg-note">Sua conta tem verificação em duas etapas — informe a senha 2FA.</p>
+          <label>Senha 2FA
+            <input id="tg-pass" type="password" autocomplete="off" required>
+          </label>
+          <button class="btn btn-primary" type="submit">Confirmar senha</button>
+        </form>
+        <button id="btn-tg-disconnect" class="btn btn-danger-ghost hidden" type="button">Desconectar</button>
+      </div>
+
+      <!-- IA (copy) -->
+      <div class="card form">
+        <h2>🤖 IA (copy)</h2>
+        <p class="cfg-note">Provedor que gera o texto das ofertas.</p>
+        <label>Provedor
+          <select id="copy-provider">
+            <option value="ollama">Ollama (local)</option>
+            <option value="anthropic">Claude (API Anthropic)</option>
+            <option value="openai">OpenAI (ChatGPT)</option>
+          </select>
+        </label>
+
+        <!-- campos do Ollama -->
+        <div id="copy-ollama-fields">
+          <label>URL
+            <input id="ol-url" type="url" placeholder="http://127.0.0.1:11434">
+          </label>
+          <label>Modelo
+            <input id="ol-model" placeholder="llama3.2:3b">
+          </label>
+        </div>
+
+        <!-- campos do Claude/Anthropic -->
+        <div id="copy-anthropic-fields" class="hidden">
+          <label>Chave da Anthropic
+            <input id="copy-anthropic-key" type="password" autocomplete="new-password" placeholder="sk-ant-...">
+          </label>
+          <p id="copy-anthropic-key-hint" class="muted hidden" style="font-size:12px; margin:-4px 0 10px;"></p>
+          <label>Modelo
+            <input id="copy-anthropic-model" placeholder="claude-haiku-4-5-20251001">
+          </label>
+        </div>
+
+        <!-- campos do OpenAI -->
+        <div id="copy-openai-fields" class="hidden">
+          <label>Chave da OpenAI
+            <input id="copy-openai-key" type="password" autocomplete="new-password" placeholder="sk-...">
+          </label>
+          <p id="copy-openai-key-hint" class="muted hidden" style="font-size:12px; margin:-4px 0 10px;"></p>
+          <label>Modelo
+            <input id="copy-openai-model" placeholder="gpt-4o-mini">
+          </label>
+        </div>
+
+        <label>Estilo extra <span class="muted">(opcional) — instrução de tom anexada ao pedido da IA. Ex.: "fale mais sóbrio" / "use gírias de academia".</span>
+          <input id="copy-style" placeholder="(deixe vazio pra usar o padrão)">
+        </label>
+
+        <label>Persona / tom base <span class="muted">(opcional) — quem "fala" na copy. Vazio = curadora padrão. Ex.: "Você é a Nathy, curadora fitness; indica como quem recomenda pra uma amiga."</span>
+          <textarea id="copy-persona" rows="3" placeholder="(deixe vazio pra usar o padrão)"></textarea>
+        </label>
+
+        <label>Modelo do auto-reply (DM) <span class="muted">(opcional) — modelo da IA que responde no privado. Vazio = usa o mesmo modelo da copy.</span>
+          <input id="copy-reply-model" placeholder="(vazio = herda o modelo da copy)">
+        </label>
+
+        <!-- teste: gera com o provedor SALVO (salve antes de testar) -->
+        <div id="copy-test-wrap" class="hidden">
+          <button id="btn-copy-test" class="btn" type="button" style="width:100%; margin-bottom:10px;">Testar copy (provedor salvo)</button>
+          <div id="copy-test-result"></div>
+        </div>
+
+        <p class="cfg-note" style="margin:4px 0 12px;">A chave fica só no servidor (mascarada). Claude/OpenAI geram copy melhor; Ollama é grátis e local.</p>
+        <button id="btn-copy-save" class="btn btn-primary" type="button">Salvar</button>
+      </div>
+
+      <!-- Operação -->
+      <div class="card form">
+        <h2>⚙️ Operação</h2>
+        <p class="cfg-note">⚡ Alterações valem <b>imediatamente</b>, sem reiniciar.</p>
+        <div class="row2">
+          <label>Janela de postagem (HH:MM-HH:MM)
+            <input id="op-window" placeholder="08:00-22:00">
+          </label>
+          <label>Posts por dia nos grupos <span class="muted">— um número (ex.: 4) ou vários separados por vírgula pra subir por semana (ex.: 3,4,5)</span>
+            <input id="op-ramp" placeholder="4">
+          </label>
+        </div>
+        <div class="row2">
+          <label>Horários de pico <span class="muted">— horas fixas por vírgula (ex.: 12,19,21); os posts do dia se concentram nelas (com variação de minutos)</span>
+            <input id="op-peak" placeholder="12,19,21">
+          </label>
+        </div>
+        <div class="row2">
+          <label>Espaçamento entre grupos ms (min-max)
+            <input id="op-spacing" placeholder="60000-180000">
+          </label>
+          <label>Delay de digitação ms (min-max)
+            <input id="op-delay" placeholder="3000-8000">
+          </label>
+        </div>
+        <div class="row2">
+          <label>Dedup (dias)
+            <input id="op-dedup" type="number" min="0" step="1" inputmode="numeric">
+          </label>
+          <label>TTL da oferta (horas)
+            <input id="op-ttl" type="number" min="0" step="1" inputmode="numeric">
+          </label>
+        </div>
+        <p class="cfg-subtitle">Pisos do ranking</p>
+        <div class="row2">
+          <label>Comissão mínima (fração, ex.: 0.05)
+            <input id="op-mincomm" type="number" min="0" step="0.01" inputmode="decimal">
+          </label>
+          <label>Desconto mínimo (%)
+            <input id="op-mindisc" type="number" min="0" step="1" inputmode="numeric">
+          </label>
+        </div>
+        <div class="row2">
+          <label>Vendas mínimas
+            <input id="op-minsales" type="number" min="0" step="1" inputmode="numeric">
+          </label>
+          <label>Nota mínima (0–5)
+            <input id="op-minrating" type="number" min="0" max="5" step="0.1" inputmode="decimal">
+          </label>
+        </div>
+        <label>Score mínimo (0–100) <span class="muted">— nota que combina desconto, comissão, vendas e avaliação. Quanto maior o piso, menos ofertas passam (só as melhores). 0 = não filtra por score.</span>
+          <input id="op-minscore" type="number" min="0" max="100" step="1" inputmode="numeric">
+        </label>
+        <p class="cfg-subtitle">Mix de categorias <span class="muted" style="font-weight:400;">— fração-alvo de cada tipo nos posts (idealmente soma ~1,0)</span></p>
+        <div class="row3">
+          <label>Vestuário
+            <input id="op-mix-vest" type="number" min="0" max="1" step="0.05" inputmode="decimal">
+          </label>
+          <label>Acessórios
+            <input id="op-mix-aces" type="number" min="0" max="1" step="0.05" inputmode="decimal">
+          </label>
+          <label>Suplementos
+            <input id="op-mix-sup" type="number" min="0" max="1" step="0.05" inputmode="decimal">
+          </label>
+        </div>
+        <p class="cfg-subtitle">Pesos do score <span class="muted" style="font-weight:400;">— o que pesa mais na nota da oferta (soma ~1,0)</span></p>
+        <div class="row3">
+          <label>Comissão
+            <input id="op-w-comm" type="number" min="0" max="1" step="0.05" inputmode="decimal">
+          </label>
+          <label>Desconto
+            <input id="op-w-disc" type="number" min="0" max="1" step="0.05" inputmode="decimal">
+          </label>
+          <label>Popularidade
+            <input id="op-w-pop" type="number" min="0" max="1" step="0.05" inputmode="decimal">
+          </label>
+        </div>
+        <p class="cfg-subtitle">Penalidades do score <span class="muted" style="font-weight:400;">— quanto o score afunda em cada caso (1 = desligado, 0.4 afunda ~60%)</span></p>
+        <div class="row3">
+          <label>Termo genérico (denylist)
+            <input id="op-penalty" type="number" min="0" max="1" step="0.05" inputmode="decimal">
+          </label>
+          <label>Sem avaliação
+            <input id="op-noreview" type="number" min="0" max="1" step="0.05" inputmode="decimal">
+          </label>
+          <label>Sem vendas
+            <input id="op-nosales" type="number" min="0" max="1" step="0.05" inputmode="decimal">
+          </label>
+        </div>
+        <button id="btn-op-save" class="btn btn-primary" type="button">Salvar</button>
+      </div>
+
+      <!-- Conteúdo / copy -->
+      <div class="card form">
+        <h2>📝 Conteúdo e copy</h2>
+        <p class="cfg-note">⚡ Vale na hora de salvar. Controla o que é bloqueado e o texto das mensagens.</p>
+        <label>Termos bloqueados <span class="muted">— 1 por linha. Ofertas cujo título contém qualquer um destes são <b>descartadas</b> (sem acento, minúsculas).</span>
+          <textarea id="ct-denylist" rows="5" placeholder="emagrecedor&#10;anabolizante&#10;…"></textarea>
+        </label>
+        <label>Termos penalizados <span class="muted">— 1 por linha. NÃO exclui: só <b>afunda na fila</b> (produto genérico que não converte, ex.: corda de pular, mochila). Some se cair abaixo do score mínimo.</span>
+          <textarea id="ct-penaltylist" rows="4" placeholder="corda de pular&#10;mochila&#10;sacola&#10;…"></textarea>
+        </label>
+        <label>Chamadas de ação (CTA) <span class="muted">— 1 por linha, rodam em rodízio na linha acima do link. Vazio = usa as embutidas.</span>
+          <textarea id="ct-ctas" rows="4" placeholder="👉 Garante o seu por aqui:&#10;🛒 Pega o teu antes que suba:"></textarea>
+        </label>
+        <label>Linha de publicidade <span class="muted">— exigência CONAR/CDC. Vazio remove a linha.</span>
+          <input id="ct-disclosure" placeholder="*Publi*">
+        </label>
+        <label>Rodapé da mensagem <span class="muted">— última linha antes da publicidade. Vazio remove.</span>
+          <input id="ct-footer" placeholder="⏰ Preço pode mudar a qualquer momento!">
+        </label>
+        <label>Templates de copy (reserva) <span class="muted">— 1 por linha, use <code>{titulo}</code>. Usados quando a IA falha. Vazio = usa os embutidos.</span>
+          <textarea id="ct-templates" rows="4" placeholder="🔥 {titulo} com preço que não dura! 🏃"></textarea>
+        </label>
+        <button id="btn-content-save" class="btn btn-primary" type="button">Salvar conteúdo</button>
+      </div>
+
+      <!-- Aquecimento (ramp-up) -->
+      <div class="card form">
+        <h2>🌡️ Aquecimento (ramp-up)</h2>
+        <p class="cfg-note">O sistema sobe o volume aos poucos pra não queimar o número (semana 1 baixa, vai subindo). Reinicie se trocou de chip ou começou cedo demais — recomeça da semana 1 na próxima postagem/disparo.</p>
+        <div id="warmup-status" class="cfg-status"><span class="muted">carregando…</span></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+          <button id="btn-warmup-posts" class="btn btn-danger-ghost" type="button">Reiniciar aquecimento dos posts</button>
+          <button id="btn-warmup-bc" class="btn btn-danger-ghost" type="button">Reiniciar aquecimento dos disparos</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+'use strict';
+
+/* ============ utilidades ============ */
+var TOKEN_KEY = 'affiliate_token';
+var token = localStorage.getItem(TOKEN_KEY) || '';
+var fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+var fmtInt = new Intl.NumberFormat('pt-BR');
+
+function $(sel, el) { return (el || document).querySelector(sel); }
+function $all(sel, el) { return Array.prototype.slice.call((el || document).querySelectorAll(sel)); }
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+function fmtTime(iso) {
+  if (!iso) return '—';
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+function pct(frac, digits) {
+  return (Number(frac) * 100).toLocaleString('pt-BR', { maximumFractionDigits: digits == null ? 1 : digits }) + '%';
+}
+
+function toast(msg, type) {
+  var t = document.createElement('div');
+  t.className = 'toast' + (type === 'err' ? ' err' : '');
+  t.textContent = msg;
+  $('#toasts').appendChild(t);
+  setTimeout(function () {
+    t.classList.add('out');
+    setTimeout(function () { t.remove(); }, 350);
+  }, 4500);
+}
+
+function setLoading(btn, on, label) {
+  if (!btn) return;
+  if (on) {
+    if (!btn.dataset.html) btn.dataset.html = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span>' + (label ? ' ' + esc(label) : ' ' + btn.dataset.html);
+    btn.disabled = true;
+    btn.classList.add('loading');
+  } else {
+    if (btn.dataset.html) { btn.innerHTML = btn.dataset.html; delete btn.dataset.html; }
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
+}
+
+/* fallback de imagem dos cards (chamado por onerror inline) */
+function imgFail(img) {
+  var d = document.createElement('div');
+  d.className = 'noimg';
+  d.textContent = '🛒';
+  img.replaceWith(d);
+}
+
+/* ============ wrapper fetch único (token + 401 global) ============ */
+function ApiError(message, status) {
+  var e = new Error(message);
+  e.name = 'ApiError';
+  e.status = status;
+  return e;
+}
+
+function api(path, opts) {
+  opts = opts || {};
+  var timeoutMs = opts.timeoutMs || 30000;
+  var ctrl = new AbortController();
+  var timer = setTimeout(function () { ctrl.abort(); }, timeoutMs);
+  var headers = { 'x-admin-token': token };
+  var init = { method: opts.method || 'GET', headers: headers, signal: ctrl.signal };
+  if (opts.body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+    init.body = JSON.stringify(opts.body);
+  }
+  return fetch(path, init)
+    .then(function (res) {
+      if (res.status === 401) {
+        showLogin('Token inválido ou expirado — informe de novo.');
+        throw ApiError('Não autorizado (401)', 401);
+      }
+      return res.json().catch(function () { return null; }).then(function (data) {
+        if (!res.ok) throw ApiError((data && data.error) || ('Erro HTTP ' + res.status), res.status);
+        return data;
+      });
+    })
+    .catch(function (e) {
+      if (e.name === 'AbortError') {
+        var te = ApiError('Tempo esgotado — o servidor não respondeu.', 0);
+        te.timeout = true; /* distingue abort do timeout de falha de rede */
+        throw te;
+      }
+      if (e instanceof TypeError) throw ApiError('Falha de rede — servidor fora do ar?', 0);
+      throw e;
+    })
+    .finally(function () { clearTimeout(timer); });
+}
+
+/* ============ login / app ============ */
+var loginVisible = false;
+var activeTab = 'fila';
+var overview = null;
+
+function showLogin(msg) {
+  loginVisible = true;
+  stopAutoRefresh();
+  stopQrPolling();
+  $('#app').classList.add('hidden');
+  $('#login').classList.remove('hidden');
+  var m = $('#login-msg');
+  if (msg) { m.textContent = msg; m.classList.remove('hidden'); }
+  else { m.classList.add('hidden'); }
+  setTimeout(function () { $('#login-token').focus(); }, 60);
+}
+
+function enterApp() {
+  loginVisible = false;
+  $('#login').classList.add('hidden');
+  $('#app').classList.remove('hidden');
+  loadOverview();
+  loadHealth();
+  loadTab(activeTab);
+  startAutoRefresh();
+}
+
+$('#login-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var v = $('#login-token').value.trim();
+  if (!v) return;
+  token = v;
+  localStorage.setItem(TOKEN_KEY, v);
+  $('#login-token').value = '';
+  enterApp();
+});
+
+/* ============ overview / cabeçalho ============ */
+function loadOverview(silent) {
+  return api('/api/overview')
+    .then(function (d) {
+      overview = d;
+      renderHeader();
+      renderGroups();
+      renderTgWarn();
+      renderSourceLast();
+    })
+    .catch(function (e) {
+      if (e.status !== 401 && !silent) toast(e.message, 'err');
+    });
+}
+
+// "Último sourcing há Xmin: N ofertas" na aba Fontes (dados vêm do /api/overview).
+function renderSourceLast() {
+  var el = $('#source-last');
+  if (!el) return;
+  var ls = overview && overview.lastSourcing;
+  if (!ls || !ls.at) { el.textContent = 'ainda não rodou nesta sessão'; return; }
+  var mins = Math.round((Date.now() - new Date(ls.at).getTime()) / 60000);
+  var quando = mins < 1 ? 'agora há pouco' : (mins < 60 ? ('há ' + mins + 'min') : ('há ' + Math.round(mins / 60) + 'h'));
+  el.textContent = 'Último: ' + quando + ' · ' + (ls.total || 0) + ' ofertas' + (ls.errors ? (' · ' + ls.errors + ' erro(s)') : '');
+}
+
+document.addEventListener('click', function (e) {
+  if (!e.target.closest || !e.target.closest('#btn-source-now')) return;
+  var btn = $('#btn-source-now'); var box = $('#source-result');
+  box.innerHTML = '';
+  setLoading(btn, true, 'Buscando…');
+  api('/api/sourcing/run-now', { method: 'POST', timeoutMs: 180000 })
+    .then(function (r) {
+      if (r && r.ok) {
+        box.innerHTML = '<div class="test-res ok">✅ ' + Number(r.total || 0) + ' oferta(s) de ' + Number(r.keywords || 0) +
+          ' keyword(s)' + (r.errors ? (', ' + r.errors + ' erro(s)') : '') + (r.expired ? (' · ' + r.expired + ' expirada(s)') : '') + '</div>';
+      } else {
+        box.innerHTML = '<div class="test-res err">❌ ' + esc((r && r.error) || 'falhou') + '</div>';
+      }
+      return loadOverview(true);
+    })
+    .catch(function (e2) { if (e2.status !== 401) box.innerHTML = '<div class="test-res err">❌ ' + esc(e2.message) + '</div>'; })
+    .finally(function () { setLoading(btn, false); });
+});
+
+function renderHeader() {
+  var o = overview;
+  if (!o) return;
+  var dot = $('#status-dot');
+  dot.className = 'dot ' + (o.paused ? 'paused' : 'running');
+  dot.title = o.paused ? 'Pausado' : 'Rodando';
+
+  var btn = $('#btn-pause');
+  if (!btn.classList.contains('loading')) {
+    btn.textContent = o.paused ? 'RETOMAR' : 'PAUSAR';
+    btn.className = 'btn ' + (o.paused ? 'btn-green' : 'btn-warn');
+  }
+
+  var wk = (o.week == null) ? 'ramp não iniciado' : 'Semana ' + (o.week + 1) + ' do ramp';
+  $('#hdr-sub').textContent = wk + ' · alvo ' + o.targetPerDay + '/dia' + (o.paused ? ' · ⏸ pausado' : '');
+
+  var slots = o.slotsToday || [];
+  var slotsDone = slots.filter(function (s) { return s.status === 'done'; }).length;
+  var pt = o.postsToday || { ok: 0, failed: 0 };
+  var c = o.counts || {};
+  $('#hdr-stats').innerHTML =
+    '<span>hoje: <b class="ok-c">' + Number(pt.ok || 0) + ' ok</b> · <b class="err-c">' +
+      Number(pt.failed || 0) + ' falha' + (Number(pt.failed) === 1 ? '' : 's') + '</b></span>' +
+    '<span>slots ' + slotsDone + '/' + slots.length + '</span>' +
+    '<span>fila ' + Number(c.pending || 0) + ' (' + Number(o.pendingAboveMinScore || 0) + ' no corte)</span>';
+  $('#cnt-fila').textContent = c.pending ? fmtInt.format(c.pending) : '';
+
+  // alerta: sistema ativo, sem oferta no corte, mas ainda há posts programados hoje
+  var qw = $('#queue-warn');
+  var slotsPending = slots.filter(function (s) { return s.status === 'pending'; }).length;
+  if (!o.paused && Number(o.pendingAboveMinScore || 0) === 0 && slotsPending > 0) {
+    qw.textContent = '⚠️ Sem ofertas no corte (nenhuma com score suficiente) e ainda há ' + slotsPending +
+      ' post(s) programado(s) pra hoje — a busca de ofertas pode estar travada. Veja a aba Fontes (“Buscar ofertas agora”).';
+    qw.classList.remove('hidden');
+  } else {
+    qw.classList.add('hidden');
+  }
+}
+
+// Faixa de semáforos de saúde (WhatsApp/Instagram/Telegram/Disparos/Ofertas/Copy).
+function loadHealth() {
+  return api('/api/health')
+    .then(function (d) { renderHealth((d && d.items) || []); })
+    .catch(function () { /* silencioso */ });
+}
+function renderHealth(items) {
+  var el = $('#health-strip');
+  if (!el) return;
+  el.innerHTML = items.map(function (it) {
+    var cls = (it.level === 'err' || it.level === 'warn') ? (' ' + it.level) : '';
+    return '<span class="health-chip' + cls + '"><span class="hdot ' + esc(it.level || '') + '"></span>' +
+      esc(it.area) + ': ' + esc(it.label) + '</span>';
+  }).join('');
+}
+
+$('#btn-pause').addEventListener('click', function () {
+  if (!overview) return;
+  var paused = overview.paused;
+  var q = paused
+    ? 'Retomar as postagens automáticas?'
+    : 'PAUSAR todas as postagens automáticas (kill-switch)?';
+  if (!confirm(q)) return;
+  var btn = $('#btn-pause');
+  setLoading(btn, true);
+  api(paused ? '/api/resume' : '/api/pause', { method: 'POST' })
+    .then(function (r) {
+      overview.paused = !!r.paused;
+      toast(r.paused ? '⏸ Sistema pausado' : '▶️ Sistema retomado');
+    })
+    .catch(function (e) { if (e.status !== 401) toast(e.message, 'err'); })
+    .finally(function () {
+      setLoading(btn, false);
+      renderHeader();
+    });
+});
+
+$('#btn-refresh').addEventListener('click', function () {
+  var btn = $('#btn-refresh');
+  setLoading(btn, true, '');
+  var jobs = [loadOverview(), loadHealth()];
+  if (activeTab === 'fila') jobs.push(loadOffers(true));
+  else if (activeTab === 'posts') jobs.push(loadPosts());
+  else if (activeTab === 'fontes') { jobs.push(loadKeywords()); jobs.push(loadChannels()); }
+  else if (activeTab === 'config') { jobs.push(loadConfig()); jobs.push(loadWaStatus()); jobs.push(loadInstagram()); }
+  else if (activeTab === 'disparos') jobs.push(loadBroadcast());
+  else if (activeTab === 'aquecedor') jobs.push(loadWarmer());
+  Promise.all(jobs).finally(function () { setLoading(btn, false); });
+});
+
+/* auto-refresh da visão geral a cada 30s (pausa com aba oculta) */
+var refreshTimer = null;
+function startAutoRefresh() {
+  stopAutoRefresh();
+  var tick = 0;
+  refreshTimer = setInterval(function () {
+    if (document.visibilityState === 'visible' && !loginVisible) {
+      loadOverview(true);
+      if (tick++ % 2 === 0) loadHealth(); /* saúde a cada 60s (1 chamada à Evolution) */
+    }
+  }, 30000);
+}
+function stopAutoRefresh() {
+  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+}
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'visible') {
+    if (token && !loginVisible) {
+      loadOverview(true); loadHealth(); startAutoRefresh();
+      /* retoma o acompanhamento do QR se a aba Config estiver ativa */
+      if (activeTab === 'config') loadWaStatus();
+    }
+  } else {
+    stopAutoRefresh();
+    stopQrPolling();
+  }
+});
+
+/* ============ abas ============ */
+$('#tabs').addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-tab]');
+  if (b) switchTab(b.dataset.tab);
+});
+
+function switchTab(name) {
+  activeTab = name;
+  $all('#tabs .tab').forEach(function (b) { b.classList.toggle('active', b.dataset.tab === name); });
+  $all('main > section').forEach(function (s) { s.classList.toggle('hidden', s.id !== 'tab-' + name); });
+  if (name !== 'config') stopQrPolling(); /* QR só atualiza com a aba Config visível */
+  loadTab(name);
+}
+
+function loadTab(name) {
+  if (name === 'fila') loadOffers(true);
+  else if (name === 'posts') loadPosts();
+  else if (name === 'grupos') { renderGroups(); loadOverview(true); }
+  else if (name === 'fontes') { renderTgWarn(); loadKeywords(); loadChannels(); }
+  else if (name === 'config') { loadConfig(); loadWaStatus(); loadInstagram(); loadWarmup(); }
+  else if (name === 'disparos') loadBroadcast();
+  else if (name === 'aquecedor') loadWarmer();
+}
+
+/* ============ Aquecimento (ramp-up) ============ */
+function loadWarmup() {
+  return api('/api/operation/warmup')
+    .then(function (w) {
+      var fmt = function (o, unidade) {
+        if (!o.startedAt) return 'ainda não iniciado (começa na 1ª ' + unidade + ')';
+        var wk = (o.week == null ? 0 : o.week) + 1;
+        var multi = (o.ramp || []).length > 1;
+        return 'Semana ' + wk + (multi ? '' : ' (sem aquecimento)') + ' · enviando ' + o.target + '/dia';
+      };
+      $('#warmup-status').innerHTML =
+        '📨 <b>Posts nos grupos:</b> ' + fmt(w.posts || {}, 'postagem') +
+        '<br>📤 <b>Disparos:</b> ' + fmt(w.broadcast || {}, 'mensagem');
+    })
+    .catch(function () { $('#warmup-status').innerHTML = '<span class="muted">não foi possível carregar</span>'; });
+}
+
+function resetWarmup(which, label, btn) {
+  if (!confirm('Reiniciar o aquecimento ' + label + '? O volume volta pra semana 1 e sobe de novo aos poucos.')) return;
+  setLoading(btn, true);
+  api('/api/operation/reset-warmup', { method: 'POST', body: { which: which } })
+    .then(function () { toast('🌡️ Aquecimento reiniciado (' + label + ')'); return loadWarmup(); })
+    .catch(function (e) { if (e.status !== 401) toast(e.message, 'err'); })
+    .finally(function () { setLoading(btn, false); });
+}
+$('#btn-warmup-posts').addEventListener('click', function () { resetWarmup('posts', 'dos posts', this); });
+$('#btn-warmup-bc').addEventListener('click', function () { resetWarmup('broadcast', 'dos disparos', this); });
+
+/* ============ FILA ============ */
+var filaStatus = 'pending';
+var filaItems = [];
+var filaTotal = 0;
+
+var STATUS_LABEL = {
+  pending: 'pendente', posting: 'postando…', posted: 'postada', rejected: 'rejeitada',
+  expired: 'expirada', skipped: 'pulada'
+};
+
+$('#fila-status').addEventListener('change', function () {
+  filaStatus = this.value;
+  loadOffers(true);
+});
+
+function loadOffers(reset) {
+  if (reset) loadNextSequence();
+  var list = $('#fila-list');
+  if (reset) { filaItems = []; filaTotal = 0; list.innerHTML = '<p class="empty">carregando…</p>'; }
+  return api('/api/offers?status=' + encodeURIComponent(filaStatus) + '&limit=50&offset=' + filaItems.length)
+    .then(function (d) {
+      filaItems = reset ? (d.offers || []) : filaItems.concat(d.offers || []);
+      filaTotal = Number(d.total || 0);
+      renderOffers();
+    })
+    .catch(function (e) {
+      if (e.status !== 401) list.innerHTML = '<p class="empty">Erro: ' + esc(e.message) + '</p>';
+    });
+}
+
+function renderOffers() {
+  var list = $('#fila-list');
+  $('#fila-total').textContent = filaTotal ? (filaItems.length + ' de ' + fmtInt.format(filaTotal)) : '';
+  if (!filaItems.length) {
+    list.innerHTML = '<p class="empty">Nenhuma oferta aqui 🤷</p>';
+  } else {
+    list.innerHTML = filaItems.map(offerCard).join('');
+  }
+  $('#fila-more').classList.toggle('hidden', filaItems.length >= filaTotal);
+}
+
+function offerCard(o) {
+  var price = Number(o.price);
+  var priceFrom = (o.price_from == null) ? null : Number(o.price_from);
+  var disc = Number(o.discount_pct || 0);
+  var comm = Number(o.commission_rate || 0);
+  var sales = Number(o.sales || 0);
+  var rating = (o.rating == null) ? null : Number(o.rating);
+  var score = Math.round(Number(o.score || 0));
+  var showFrom = priceFrom != null && priceFrom > price;
+  var scoreCls = score >= 60 ? 'score-hi' : (score >= 30 ? 'score-mid' : 'score-lo');
+  var link = o.affiliate_url || o.product_url || '';
+
+  var thumb = o.image_url
+    ? '<img src="' + esc(o.image_url) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="imgFail(this)">'
+    : '<div class="noimg">🛒</div>';
+
+  var badges =
+    '<span class="badge badge-' + esc(o.marketplace) + '">' + esc(o.marketplace) + '</span>' +
+    '<span class="badge">' + esc(o.source) + '</span>' +
+    (o.category ? '<span class="badge">' + esc(o.category) + '</span>' : '') +
+    (disc > 0 ? '<span class="badge badge-disc">-' + disc + '%</span>' : '') +
+    (o.status !== 'pending' ? '<span class="badge badge-st">' + esc(STATUS_LABEL[o.status] || o.status) + '</span>' : '');
+
+  var meta = [];
+  if (comm > 0) meta.push('com. ' + pct(comm));
+  if (sales > 0) meta.push(fmtInt.format(sales) + ' vendas');
+  if (rating) meta.push('★ ' + rating.toLocaleString('pt-BR', { maximumFractionDigits: 1 }));
+  meta.push(fmtTime(o.created_at));
+  if (o.status === 'posted' && o.posted_at) meta.push('postada ' + fmtTime(o.posted_at));
+
+  var actions = '';
+  if (o.status === 'pending') {
+    actions =
+      '<div class="offer-actions">' +
+        '<button class="btn btn-danger-ghost" type="button" data-action="reject" data-id="' + esc(o.id) + '">Rejeitar</button>' +
+        '<button class="btn btn-primary" type="button" data-action="postnow" data-id="' + esc(o.id) + '">Postar agora</button>' +
+      '</div>';
+  } else if (o.status === 'rejected' || o.status === 'expired' || o.status === 'skipped') {
+    actions =
+      '<div class="offer-actions">' +
+        '<button class="btn" type="button" data-action="restore" data-id="' + esc(o.id) + '">Restaurar</button>' +
+      '</div>';
+  }
+
+  var titleHtml = link
+    ? '<a href="' + esc(link) + '" target="_blank" rel="noopener noreferrer">' + esc(o.title) + '</a>'
+    : esc(o.title);
+
+  return (
+    '<div class="card-offer" data-oid="' + esc(o.id) + '">' +
+      '<div class="offer-top">' +
+        '<div class="thumb">' + thumb + '</div>' +
+        '<div class="offer-info">' +
+          '<div class="offer-title">' + titleHtml + '</div>' +
+          '<div class="badges">' + badges + '</div>' +
+          '<div class="prices">' +
+            (showFrom ? '<span class="from">De ' + fmtBRL.format(priceFrom) + '</span>' : '') +
+            '<span class="por">' + fmtBRL.format(price) + '</span>' +
+          '</div>' +
+          '<div class="meta"><span>' + meta.map(esc).join('</span><span>') + '</span></div>' +
+        '</div>' +
+        '<div class="offer-score"><div class="score-n ' + scoreCls + '">' + score + '</div><div class="score-l">score</div></div>' +
+      '</div>' +
+      (o.source_copy
+        ? '<details class="srccopy"><summary>copy original (' + esc(o.source) + ')</summary><pre>' + esc(o.source_copy) + '</pre></details>'
+        : '') +
+      actions +
+    '</div>'
+  );
+}
+
+/* ---- preview "Próximos a postar (mix)" (read-only, ordem REAL de postagem) ---- */
+var BUCKET_LABEL = { vestuario: 'vestuário', acessorios: 'acessórios', suplementos: 'suplemento' };
+
+function loadNextSequence() {
+  var list = $('#next-list');
+  return api('/api/offers/next?limit=12')
+    .then(function (d) {
+      renderNextSequence((d && d.sequence) || []);
+    })
+    .catch(function (e) {
+      if (e.status === 401) return;
+      $('#next-summary').innerHTML = '';
+      list.innerHTML = '<p class="empty">Erro: ' + esc(e.message) + '</p>';
+    });
+}
+
+function renderNextSequence(seq) {
+  var list = $('#next-list');
+  var summary = $('#next-summary');
+  if (!seq.length) {
+    summary.innerHTML = '';
+    list.innerHTML = '<p class="empty">Nenhuma oferta elegível agora — nada a postar no mix. 🤷</p>';
+    return;
+  }
+
+  /* resumo: conta os buckets na ordem fixa do mix */
+  var order = ['vestuario', 'acessorios', 'suplementos'];
+  var counts = { vestuario: 0, acessorios: 0, suplementos: 0 };
+  seq.forEach(function (o) {
+    var b = o.bucket;
+    if (counts[b] == null) counts[b] = 0;
+    counts[b]++;
+  });
+  summary.innerHTML = order.filter(function (b) { return counts[b] > 0; }).map(function (b) {
+    var n = counts[b];
+    var lbl = BUCKET_LABEL[b] || b;
+    return '<span class="badge badge-bkt ' + esc(b) + '">' + n + ' ' + esc(lbl) + (n === 1 ? '' : 's') + '</span>';
+  }).join('');
+
+  list.innerHTML = seq.map(function (o, i) {
+    var pos = Number(o.position || (i + 1));
+    var price = Number(o.price);
+    var disc = Number(o.discount_pct || 0);
+    var score = Math.round(Number(o.score || 0));
+    var scoreCls = score >= 60 ? 'score-hi' : (score >= 30 ? 'score-mid' : 'score-lo');
+    var bkt = o.bucket || 'acessorios';
+    var bktLbl = BUCKET_LABEL[bkt] || bkt;
+    return (
+      '<div class="nextrow">' +
+        '<span class="next-pos">' + pos + '</span>' +
+        '<div class="next-main">' +
+          '<div class="next-title">' + esc(o.title || '—') + '</div>' +
+          '<div class="next-sub">' +
+            '<span class="badge badge-bkt ' + esc(bkt) + '">' + esc(bktLbl) + '</span>' +
+            (o.marketplace ? '<span class="badge badge-' + esc(o.marketplace) + '">' + esc(o.marketplace) + '</span>' : '') +
+            (disc > 0 ? '<span class="badge badge-disc">-' + disc + '%</span>' : '') +
+            '<span class="next-price">' + fmtBRL.format(price) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="next-score"><b class="' + scoreCls + '">' + score + '</b><span>score</span></div>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+$('#fila-more').addEventListener('click', function () {
+  var btn = $('#fila-more');
+  setLoading(btn, true);
+  loadOffers(false).finally(function () { setLoading(btn, false); });
+});
+
+$('#fila-list').addEventListener('click', function (e) {
+  var btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  var id = btn.dataset.id;
+  if (btn.dataset.action === 'reject') rejectOffer(id, btn);
+  else if (btn.dataset.action === 'restore') restoreOffer(id, btn);
+  else if (btn.dataset.action === 'postnow') postNow(id, btn);
+});
+
+function afterOfferAction(id) {
+  if (filaStatus === 'all') { loadOffers(true); }
+  else {
+    filaItems = filaItems.filter(function (o) { return String(o.id) !== String(id); });
+    filaTotal = Math.max(0, filaTotal - 1);
+    renderOffers();
+  }
+  loadOverview(true);
+}
+
+function rejectOffer(id, btn) {
+  if (!confirm('Rejeitar esta oferta? Ela sai da fila (dá pra restaurar depois).')) return;
+  setLoading(btn, true);
+  api('/api/offers/' + encodeURIComponent(id) + '/reject', { method: 'POST' })
+    .then(function () { toast('Oferta rejeitada 🗑️'); afterOfferAction(id); })
+    .catch(function (e) { if (e.status !== 401) toast(e.message, 'err'); setLoading(btn, false); });
+}
+
+function restoreOffer(id, btn) {
+  setLoading(btn, true);
+  api('/api/offers/' + encodeURIComponent(id) + '/restore', { method: 'POST' })
+    .then(function () { toast('Oferta restaurada — voltou pra fila ✅'); afterOfferAction(id); })
+    .catch(function (e) { if (e.status !== 401) toast(e.message, 'err'); setLoading(btn, false); });
+}
+
+function postNow(id, btn) {
+  var msg = 'Postar esta oferta AGORA em todos os grupos habilitados?\n\n' +
+    'Os envios respeitam espaçamento entre grupos e podem levar vários minutos; mantenha a página aberta.';
+  if (!confirm(msg)) return;
+  setLoading(btn, true, 'Enviando… (pode levar vários minutos)');
+  var card = btn.closest('.card-offer');
+  if (card) $all('button', card).forEach(function (b) { if (b !== btn) b.disabled = true; });
+  /* timeout dimensionado pelo pior caso real do backend:
+     copy (até 90s) + por grupo: envio (até 30s) + espaçamento (até 180s) + folga */
+  var nGroups = 5;
+  if (overview && overview.groups) {
+    var enabled = overview.groups.filter(function (g) { return g.enabled; }).length;
+    if (enabled > 0) nGroups = enabled;
+  }
+  var timeoutMs = (120 + nGroups * 220) * 1000;
+  api('/api/offers/' + encodeURIComponent(id) + '/post-now', { method: 'POST', timeoutMs: timeoutMs })
+    .then(function (r) {
+      var ok = Number(r.sent || 0), fail = Number(r.failed || 0);
+      toast('Postado: ' + ok + ' enviado(s), ' + fail + ' falha(s)', ok === 0 ? 'err' : 'ok');
+      afterOfferAction(id);
+    })
+    .catch(function (e) {
+      if (e.timeout) {
+        /* o backend CONTINUA postando: NÃO reabilita o card (re-clique duplicaria) */
+        toast('Sem resposta ainda — os envios continuam no servidor. Confira na aba Posts antes de tentar de novo.', 'err');
+        return;
+      }
+      if (e.status !== 401) toast(e.message, 'err');
+      setLoading(btn, false);
+      if (card) $all('button', card).forEach(function (b) { b.disabled = false; });
+    });
+}
+
+/* ============ POSTS ============ */
+function loadPosts() {
+  var list = $('#posts-list');
+  return api('/api/posts?limit=50')
+    .then(function (d) {
+      var posts = d.posts || [];
+      if (!posts.length) { list.innerHTML = '<p class="empty">Nenhum post ainda.</p>'; return; }
+      list.innerHTML = posts.map(function (p) {
+        return (
+          '<div class="rowitem">' +
+            '<span class="pdot ' + (p.ok ? 'ok' : 'fail') + '" title="' + (p.ok ? 'enviado' : esc(p.error || 'erro')) + '">' +
+              (p.ok ? '✓' : '✕') + '</span>' +
+            '<div class="rowmain">' +
+              '<div class="rowtitle">' + esc(p.title || ('oferta #' + p.offer_id)) + '</div>' +
+              '<div class="rowsub">' + esc(p.group_name || p.group_jid || '') + ' · ' + fmtTime(p.posted_at) +
+                (p.price != null ? ' · ' + fmtBRL.format(Number(p.price)) : '') + '</div>' +
+              (p.ok ? '' : '<div class="rowerr" title="' + esc(p.error || '') + '">' + esc(p.error || 'erro') + '</div>') +
+            '</div>' +
+          '</div>'
+        );
+      }).join('');
+    })
+    .catch(function (e) {
+      if (e.status !== 401) list.innerHTML = '<p class="empty">Erro: ' + esc(e.message) + '</p>';
+    });
+}
+
+/* ============ GRUPOS ============ */
+var groupTogglesInFlight = 0; /* PATCHes de grupo em voo: bloqueia re-render da lista */
+
+function renderGroups() {
+  var el = $('#groups-list');
+  if (!overview) return;
+  /* não repintar com snapshot possivelmente velho enquanto um toggle está em
+     voo — o PATCH atualiza overview.groups no .then e re-renderiza no fim */
+  if (groupTogglesInFlight > 0) return;
+  var gs = (overview.groups || []).slice().sort(function (a, b) { return a.position - b.position; });
+  if (!gs.length) {
+    el.innerHTML = '<p class="empty">Nenhum grupo cadastrado. Use “Sincronizar grupos” acima.</p>';
+    return;
+  }
+  el.innerHTML = gs.map(function (g) {
+    return (
+      '<div class="rowitem">' +
+        '<div class="rowmain">' +
+          '<div class="rowtitle">' + esc(g.name || g.jid) + '</div>' +
+          '<div class="rowsub">' + esc(g.jid) + ' · posição ' + Number(g.position || 0) + '</div>' +
+        '</div>' +
+        '<label class="switch"><input type="checkbox" data-gjid="' + esc(g.jid) + '"' + (g.enabled ? ' checked' : '') + '><i></i></label>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+$('#groups-list').addEventListener('change', function (e) {
+  var cb = e.target.closest('input[data-gjid]');
+  if (!cb) return;
+  var jid = cb.dataset.gjid;
+  var enabled = cb.checked;
+  cb.disabled = true;
+  groupTogglesInFlight++;
+  api('/api/groups/' + encodeURIComponent(jid), { method: 'PATCH', body: { enabled: enabled } })
+    .then(function () {
+      toast(enabled ? 'Grupo ativado ✅' : 'Grupo desativado');
+      /* aplica no overview ATUAL (pode ter sido trocado por um refresh com
+         snapshot lido antes do PATCH commitar) */
+      if (overview) {
+        var g = (overview.groups || []).find(function (x) { return x.jid === jid; });
+        if (g) g.enabled = enabled;
+      }
+    })
+    .catch(function (err) {
+      cb.checked = !enabled;
+      if (err.status !== 401) toast(err.message, 'err');
+    })
+    .finally(function () {
+      cb.disabled = false;
+      groupTogglesInFlight = Math.max(0, groupTogglesInFlight - 1);
+      /* repinta a partir do estado em memória já corrigido */
+      if (groupTogglesInFlight === 0 && activeTab === 'grupos') renderGroups();
+    });
+});
+
+$('#btn-cg-create').addEventListener('click', function () {
+  var prefix = $('#cg-prefix').value.trim() || 'Achadinhos Fitness';
+  var n = Number($('#cg-n').value);
+  if (!Number.isInteger(n) || n < 1 || n > 20) { toast('Quantidade inválida (1 a 20).', 'err'); return; }
+  if (!confirm('Criar ' + n + ' grupo(s) "' + prefix + ' #N"? Você será adicionado em cada um.')) return;
+  var btn = $('#btn-cg-create'); var box = $('#cg-result');
+  box.textContent = 'Criando… (pode levar ~' + (n * 2) + 's)';
+  setLoading(btn, true, 'Criando…');
+  api('/api/whatsapp/groups/create', { method: 'POST', body: { prefix: prefix, n: n }, timeoutMs: 180000 })
+    .then(function (r) {
+      var ok = (r.created || []).filter(function (g) { return g.jid && !g.skipped; }).length;
+      var skip = (r.created || []).filter(function (g) { return g.skipped; }).length;
+      var err = (r.created || []).filter(function (g) { return g.error; }).length;
+      box.textContent = '✅ ' + ok + ' grupo(s) criado(s)' + (skip ? (', ' + skip + ' já existiam') : '') + (err ? (', ' + err + ' falha(s)') : '') + '. Agora escolha quais recebem ofertas acima.';
+      return loadOverview(true);
+    })
+    .catch(function (e) { if (e.status !== 401) box.textContent = '❌ ' + e.message; })
+    .finally(function () { setLoading(btn, false); });
+});
+
+$('#btn-sync').addEventListener('click', function () {
+  var prefix = $('#sync-prefix').value.trim() || 'Achadinhos';
+  var btn = $('#btn-sync');
+  setLoading(btn, true);
+  api('/api/groups/sync', { method: 'POST', body: { prefix: prefix }, timeoutMs: 60000 })
+    .then(function () {
+      toast('Grupos sincronizados (prefixo “' + prefix + '”) ✅');
+      return loadOverview(true);
+    })
+    .catch(function (e) { if (e.status !== 401) toast(e.message, 'err'); })
+    .finally(function () { setLoading(btn, false); });
+});
+
+/* ============ GRUPOS: seletor de grupos do WhatsApp ============ */
+var waGroups = null;   /* [{ jid, subject, size, selected }] na ordem da API (= position ao salvar) */
+var waChecked = {};    /* jid -> bool (sobrevive ao filtro) */
+
+function waDisconnectedToast(e) {
+  if (e.status === 409) { toast('Instância do WhatsApp desconectada — conecte na aba Config primeiro.', 'err'); return true; }
+  return false;
+}
+
+$('#btn-wa-groups').addEventListener('click', function () {
+  var btn = $('#btn-wa-groups');
+  setLoading(btn, true, 'Carregando grupos…');
+  api('/api/whatsapp/groups', { timeoutMs: 60000 })
+    .then(function (d) {
+      waGroups = (d && d.groups) || [];
+      waChecked = {};
+      waGroups.forEach(function (g) { if (g.selected) waChecked[g.jid] = true; });
+      $('#wa-filter').value = '';
+      $('#wa-picker').classList.remove('hidden');
+      renderWaPicker();
+    })
+    .catch(function (e) {
+      if (!waDisconnectedToast(e) && e.status !== 401) toast(e.message, 'err');
+    })
+    .finally(function () { setLoading(btn, false); });
+});
+
+function renderWaPicker() {
+  var list = $('#wa-groups-list');
+  if (!waGroups || !waGroups.length) {
+    list.innerHTML = '<p class="empty">Nenhum grupo encontrado no número conectado.</p>';
+    updateWaCount();
+    return;
+  }
+  var q = $('#wa-filter').value.trim().toLowerCase();
+  var shown = waGroups.filter(function (g) {
+    return !q || String(g.subject || '').toLowerCase().indexOf(q) !== -1;
+  });
+  if (!shown.length) {
+    list.innerHTML = '<p class="empty">Nenhum grupo bate com o filtro.</p>';
+  } else {
+    list.innerHTML = shown.map(function (g) {
+      var size = Number(g.size || 0);
+      return (
+        '<label class="rowitem pick">' +
+          '<input type="checkbox" data-wjid="' + esc(g.jid) + '"' + (waChecked[g.jid] ? ' checked' : '') + '>' +
+          '<div class="rowmain">' +
+            '<div class="rowtitle">' + esc(g.subject || g.jid) + '</div>' +
+            '<div class="rowsub">' + fmtInt.format(size) + ' membro' + (size === 1 ? '' : 's') + ' · ' + esc(g.jid) + '</div>' +
+          '</div>' +
+        '</label>'
+      );
+    }).join('');
+  }
+  updateWaCount();
+}
+
+function updateWaCount() {
+  var n = 0;
+  for (var k in waChecked) { if (waChecked[k]) n++; }
+  $('#wa-sel-count').textContent = n + ' selecionado' + (n === 1 ? '' : 's');
+}
+
+$('#wa-filter').addEventListener('input', renderWaPicker);
+
+$('#wa-groups-list').addEventListener('change', function (e) {
+  var cb = e.target.closest('input[data-wjid]');
+  if (!cb) return;
+  waChecked[cb.dataset.wjid] = cb.checked;
+  updateWaCount();
+});
+
+$('#btn-wa-save').addEventListener('click', function () {
+  if (!waGroups) return;
+  /* ordem do array = ordem de exibição da lista completa = position no backend */
+  var jids = waGroups
+    .filter(function (g) { return waChecked[g.jid]; })
+    .map(function (g) { return g.jid; });
+  if (!jids.length && !confirm('Nenhum grupo marcado — isso DESATIVA todos os grupos. Continuar?')) return;
+  var btn = $('#btn-wa-save');
+  setLoading(btn, true);
+  api('/api/whatsapp/groups', { method: 'POST', body: { jids: jids }, timeoutMs: 60000 })
+    .then(function (r) {
+      toast('Seleção salva: ' + Number(r.enabled || 0) + ' ativado(s), ' + Number(r.disabled || 0) + ' desativado(s) ✅');
+      $('#wa-picker').classList.add('hidden');
+      return loadOverview(true);
+    })
+    .catch(function (e) {
+      if (!waDisconnectedToast(e) && e.status !== 401) toast(e.message, 'err');
+    })
+    .finally(function () { setLoading(btn, false); });
+});
+
+$('#btn-wa-cancel').addEventListener('click', function () {
+  $('#wa-picker').classList.add('hidden');
+});
+
+/* ============ FONTES: keywords ============ */
+function loadKeywords() {
+  var list = $('#kw-list');
+  return api('/api/keywords')
+    .then(function (d) {
+      var kws = d.keywords || [];
+      if (!kws.length) { list.innerHTML = '<p class="empty">Nenhuma keyword.</p>'; return; }
+      list.innerHTML = kws.map(function (k) {
+        return (
+          '<div class="rowitem">' +
+            '<div class="rowmain">' +
+              '<div class="rowtitle">' + esc(k.term) + '</div>' +
+              '<div class="rowsub"><span class="chip">' + esc(k.category) + '</span></div>' +
+            '</div>' +
+            '<label class="switch"><input type="checkbox" data-kid="' + esc(k.id) + '"' + (k.enabled ? ' checked' : '') + '><i></i></label>' +
+          '</div>'
+        );
+      }).join('');
+    })
+    .catch(function (e) {
+      if (e.status !== 401) list.innerHTML = '<p class="empty">Erro: ' + esc(e.message) + '</p>';
+    });
+}
+
+$('#kw-list').addEventListener('change', function (e) {
+  var cb = e.target.closest('input[data-kid]');
+  if (!cb) return;
+  var enabled = cb.checked;
+  cb.disabled = true;
+  api('/api/keywords/' + encodeURIComponent(cb.dataset.kid), { method: 'PATCH', body: { enabled: enabled } })
+    .then(function () { toast(enabled ? 'Keyword ativada ✅' : 'Keyword desativada'); })
+    .catch(function (err) {
+      cb.checked = !enabled;
+      if (err.status !== 401) toast(err.message, 'err');
+    })
+    .finally(function () { cb.disabled = false; });
+});
+
+$('#kw-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var term = $('#kw-term').value.trim();
+  var category = $('#kw-cat').value;
+  if (!term) return;
+  var btn = $('#kw-form button[type=submit]');
+  setLoading(btn, true);
+  api('/api/keywords', { method: 'POST', body: { term: term, category: category } })
+    .then(function () {
+      toast('Keyword “' + term + '” adicionada ✅');
+      $('#kw-term').value = '';
+      return loadKeywords();
+    })
+    .catch(function (err) { if (err.status !== 401) toast(err.message, 'err'); })
+    .finally(function () { setLoading(btn, false); });
+});
+
+/* ============ FONTES: canais Telegram ============ */
+function renderTgWarn() {
+  $('#tg-warn').classList.toggle('hidden', !overview || overview.telegramConfigured !== false);
+}
+
+function loadChannels() {
+  var list = $('#ch-list');
+  return api('/api/channels')
+    .then(function (d) {
+      var chs = d.channels || [];
+      if (!chs.length) { list.innerHTML = '<p class="empty">Nenhum canal monitorado.</p>'; return; }
+      list.innerHTML = chs.map(function (c) {
+        return (
+          '<div class="rowitem">' +
+            '<div class="rowmain"><div class="rowtitle">@' + esc(c.username) + '</div></div>' +
+            '<label class="switch"><input type="checkbox" data-cid="' + esc(c.id) + '"' + (c.enabled ? ' checked' : '') + '><i></i></label>' +
+          '</div>'
+        );
+      }).join('');
+    })
+    .catch(function (e) {
+      if (e.status !== 401) list.innerHTML = '<p class="empty">Erro: ' + esc(e.message) + '</p>';
+    });
+}
+
+$('#ch-list').addEventListener('change', function (e) {
+  var cb = e.target.closest('input[data-cid]');
+  if (!cb) return;
+  var enabled = cb.checked;
+  cb.disabled = true;
+  api('/api/channels/' + encodeURIComponent(cb.dataset.cid), { method: 'PATCH', body: { enabled: enabled } })
+    .then(function () { toast(enabled ? 'Canal ativado ✅' : 'Canal desativado'); })
+    .catch(function (err) {
+      cb.checked = !enabled;
+      if (err.status !== 401) toast(err.message, 'err');
+    })
+    .finally(function () { cb.disabled = false; });
+});
+
+$('#ch-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var username = $('#ch-user').value.trim().replace(/^@+/, '');
+  if (!username) return;
+  var btn = $('#ch-form button[type=submit]');
+  setLoading(btn, true);
+  api('/api/channels', { method: 'POST', body: { username: username } })
+    .then(function () {
+      toast('Canal @' + username + ' adicionado ✅');
+      $('#ch-user').value = '';
+      return loadChannels();
+    })
+    .catch(function (err) { if (err.status !== 401) toast(err.message, 'err'); })
+    .finally(function () { setLoading(btn, false); });
+});
+
+/* ============ IMPORTAR ML ============ */
+$('#ml-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var title = $('#ml-title').value.trim();
+  var affiliateUrl = $('#ml-url').value.trim();
+  var price = $('#ml-price').valueAsNumber;
+  var priceFrom = $('#ml-pricefrom').valueAsNumber;
+  var imageUrl = $('#ml-img').value.trim();
+  var category = $('#ml-cat').value;
+  if (!title || !affiliateUrl || !(price > 0)) {
+    toast('Preencha título, link de afiliado e preço.', 'err');
+    return;
+  }
+  var body = { title: title, affiliateUrl: affiliateUrl, price: price, category: category };
+  if (priceFrom > 0) body.priceFrom = priceFrom;
+  if (imageUrl) body.imageUrl = imageUrl;
+  var btn = $('#ml-submit');
+  setLoading(btn, true);
+  api('/api/offers/manual', { method: 'POST', body: body })
+    .then(function () {
+      toast('Oferta importada — entrou na fila ✅');
+      $('#ml-form').reset();
+      return loadOverview(true);
+    })
+    .catch(function (err) { if (err.status !== 401) toast(err.message, 'err'); })
+    .finally(function () { setLoading(btn, false); });
+});
+
+$('#btn-test').addEventListener('click', function () {
+  var btn = $('#btn-test');
+  setLoading(btn, true, 'Enviando test-post…');
+  api('/api/test-post', { method: 'POST', timeoutMs: 120000 })
+    .then(function () { toast('Test-post enviado pro seu WhatsApp 📲'); })
+    .catch(function (e) { if (e.status !== 401) toast(e.message, 'err'); })
+    .finally(function () { setLoading(btn, false); });
+});
+
+/* ============ CONFIG: carregamento / salvar genérico ============ */
+var cfg = null; /* snapshot do GET /api/config */
+
+function loadConfig() {
+  return api('/api/config')
+    .then(function (d) { cfg = d; fillConfigForms(); })
+    .catch(function (e) { if (e.status !== 401) toast(e.message, 'err'); });
+}
+
+function saveConfig(body, btn) {
+  setLoading(btn, true);
+  return api('/api/config', { method: 'PUT', body: body })
+    .then(function () {
+      toast('Configuração salva — já valendo ✅');
+      return loadConfig();
+    })
+    .catch(function (e) { if (e.status !== 401) toast(e.message, 'err'); })
+    .finally(function () { setLoading(btn, false); });
+}
+
+function fillConfigForms() {
+  if (!cfg) return;
+  var sh = cfg.shopee || {};
+  $('#sp-appid').value = sh.appId || '';
+  var sec = $('#sp-secret');
+  sec.value = '';
+  sec.placeholder = sh.appSecretSet ? '••••já configurado••••' : 'cole o App Secret';
+  var hint = $('#sp-secret-hint');
+  if (sh.appSecretSet && sh.appSecretLast4) {
+    hint.textContent = 'Secret atual termina em …' + sh.appSecretLast4 + '. Deixe em branco pra manter.';
+    hint.classList.remove('hidden');
+  } else {
+    hint.classList.add('hidden');
+  }
+
+  var ml = cfg.meli || {};
+  $('#meli-word').value = ml.mattWord || '';
+  $('#meli-tool').value = ml.mattTool || '';
+  $('#meli-auto').checked = !!ml.autoLinks;
+  $('#meli-tag').value = ml.tag || '';
+  var mck = $('#meli-cookie'); mck.value = ''; mck.placeholder = ml.cookieSet ? '••• sessão configurada •••' : '_csrf=...; ssid=...';
+  var mcs = $('#meli-csrf'); mcs.value = ''; mcs.placeholder = ml.csrfSet ? '••• configurado •••' : 'emparelhado ao _csrf';
+
+  var az = cfg.amazon || {};
+  $('#amazon-tag').value = az.tag || '';
+
+  var ali = cfg.aliexpress || {};
+  $('#ali-key').value = ali.appKey || '';
+  $('#ali-tid').value = ali.trackingId || '';
+  var asec = $('#ali-secret'); asec.value = ''; asec.placeholder = ali.appSecretSet ? '••• já configurada •••' : 'sk...';
+  var ahint = $('#ali-secret-hint');
+  if (ali.appSecretSet && ali.appSecretLast4) {
+    ahint.textContent = 'Secret atual termina em …' + ali.appSecretLast4 + '. Deixe em branco pra manter.';
+    ahint.classList.remove('hidden');
+  } else { ahint.classList.add('hidden'); }
+  $('#ali-test-result').textContent = '';
+  $('#meli-testlink-result').textContent = '';
+
+  var ev = cfg.evolution || {};
+  $('#wa-owner').value = String(ev.ownerJid || '').replace('@s.whatsapp.net', '');
+
+  var ig = cfg.instagram || {};
+  $('#ig-appid').value = ig.appId || '';
+  var igsec = $('#ig-appsecret'); igsec.value = ''; igsec.placeholder = ig.appSecretSet ? '••• já configurado •••' : '••••••';
+  $('#ig-baseurl').value = ig.publicBaseUrl || '';
+  $('#ig-enabled').checked = !!ig.enabled;
+  $('#ig-caption').value = ig.caption || '';
+  $('#ig-hashtags').value = ig.hashtags || '';
+  $('#ig-every').value = ig.postEveryHours != null ? ig.postEveryHours : '';
+  $('#ig-cap').value = ig.dailyCap != null ? ig.dailyCap : '';
+  $('#ig-minscore').value = ig.minScore != null ? ig.minScore : '';
+  var igtok = $('#ig-token'); igtok.value = '';
+  igtok.placeholder = ig.accessTokenSet ? ('••• token configurado' + (ig.accessTokenLast4 ? (' (…' + ig.accessTokenLast4 + ')') : '') + ' •••') : 'IGAA...';
+  $('#ig-redirect-hint').textContent = ig.publicBaseUrl
+    ? ('Redirect URI a registrar no app: ' + ig.publicBaseUrl + '/api/instagram/oauth/callback')
+    : 'Defina a URL pública para gerar o Redirect URI.';
+  $('#ig-test-result').textContent = '';
+  $('#ig-run-result').textContent = '';
+
+  var ol = cfg.ollama || {};
+  $('#ol-url').value = ol.url || '';
+  $('#ol-model').value = ol.model || '';
+
+  var cp = cfg.copy || {};
+  $('#copy-provider').value = (cp.provider === 'anthropic' || cp.provider === 'openai') ? cp.provider : 'ollama';
+  // Claude/Anthropic
+  $('#copy-anthropic-model').value = cp.anthropicModel || 'claude-haiku-4-5-20251001';
+  var ck = $('#copy-anthropic-key');
+  ck.value = '';
+  ck.placeholder = cp.anthropicKeySet ? '••• já configurada •••' : 'sk-ant-...';
+  var ckHint = $('#copy-anthropic-key-hint');
+  if (cp.anthropicKeySet && cp.anthropicKeyLast4) {
+    ckHint.textContent = 'Chave atual termina em …' + cp.anthropicKeyLast4 + '. Deixe em branco pra manter.';
+    ckHint.classList.remove('hidden');
+  } else {
+    ckHint.classList.add('hidden');
+  }
+  // OpenAI
+  $('#copy-openai-model').value = cp.openaiModel || 'gpt-4o-mini';
+  var ok = $('#copy-openai-key');
+  ok.value = '';
+  ok.placeholder = cp.openaiKeySet ? '••• já configurada •••' : 'sk-...';
+  var okHint = $('#copy-openai-key-hint');
+  if (cp.openaiKeySet && cp.openaiKeyLast4) {
+    okHint.textContent = 'Chave atual termina em …' + cp.openaiKeyLast4 + '. Deixe em branco pra manter.';
+    okHint.classList.remove('hidden');
+  } else {
+    okHint.classList.add('hidden');
+  }
+  $('#copy-style').value = cp.styleExtra || '';
+  $('#copy-persona').value = cp.persona || '';
+  $('#copy-reply-model').value = cp.replyModel || '';
+  $('#copy-test-result').innerHTML = '';
+  renderCopyProvider();
+
+  var ct = cfg.content || {};
+  $('#ct-denylist').value = ct.denylist || '';
+  $('#ct-disclosure').value = ct.disclosure || '';
+  $('#ct-footer').value = ct.footer || '';
+  $('#ct-templates').value = ct.templates || '';
+  $('#ct-penaltylist').value = ct.penaltylist || '';
+  $('#ct-ctas').value = ct.ctas || '';
+
+  var op = cfg.operation || {};
+  $('#op-window').value = op.postingWindow || '';
+  $('#op-ramp').value = op.ramp || '';
+  $('#op-peak').value = op.peakHours || '';
+  $('#op-spacing').value = op.groupSpacingMs || '';
+  $('#op-delay').value = op.sendDelayMs || '';
+  $('#op-dedup').value = op.dedupDays == null ? '' : op.dedupDays;
+  $('#op-ttl').value = op.offerTtlHours == null ? '' : op.offerTtlHours;
+  $('#op-mincomm').value = op.minCommission == null ? '' : op.minCommission;
+  $('#op-mindisc').value = op.minDiscount == null ? '' : op.minDiscount;
+  $('#op-minsales').value = op.minSales == null ? '' : op.minSales;
+  $('#op-minrating').value = op.minRating == null ? '' : op.minRating;
+  $('#op-minscore').value = op.minScore == null ? '' : op.minScore;
+  $('#op-mix-vest').value = op.mixVestuario == null ? '' : op.mixVestuario;
+  $('#op-mix-aces').value = op.mixAcessorios == null ? '' : op.mixAcessorios;
+  $('#op-mix-sup').value = op.mixSuplementos == null ? '' : op.mixSuplementos;
+  $('#op-w-comm').value = op.weightCommission == null ? '' : op.weightCommission;
+  $('#op-w-disc').value = op.weightDiscount == null ? '' : op.weightDiscount;
+  $('#op-w-pop').value = op.weightPopularity == null ? '' : op.weightPopularity;
+  $('#op-penalty').value = op.penaltyMult == null ? '' : op.penaltyMult;
+  $('#op-noreview').value = op.noReviewMult == null ? '' : op.noReviewMult;
+  $('#op-nosales').value = op.noSalesMult == null ? '' : op.noSalesMult;
+
+  renderTgConfigStatus();
+}
+
+/* ============ CONFIG: WhatsApp (instância + QR) ============ */
+var waStatus = null;
+var qrTimer = null;
+
+function stopQrPolling() {
+  if (qrTimer) { clearInterval(qrTimer); qrTimer = null; }
+}
+
+function startQrPolling() {
+  stopQrPolling();
+  qrTimer = setInterval(function () {
+    if (document.visibilityState !== 'visible' || activeTab !== 'config' || loginVisible) return;
+    fetchQr();
+  }, 20000);
+}
+
+function renderWaStatus() {
+  var el = $('#wa-status');
+  var s = waStatus;
+  if (!s) { el.innerHTML = '<span class="muted">carregando…</span>'; return; }
+  var badge = '', label = 'sem instância';
+  if (s.reachable === false) { badge = 'close'; label = 'Evolution indisponível'; }
+  else if (s.exists) {
+    if (s.state === 'open') { badge = 'open'; label = 'conectado'; }
+    else if (s.state === 'connecting') { badge = 'connecting'; label = 'conectando…'; }
+    else { badge = 'close'; label = 'desconectado'; }
+  }
+  el.innerHTML =
+    '<span class="st-badge ' + badge + '">' + esc(label) + '</span>' +
+    '<span class="muted">instância <b>' + esc(s.instance || '') + '</b>' +
+      (s.owner ? ' · número ' + esc(String(s.owner).replace('@s.whatsapp.net', '')) : '') +
+    '</span>';
+}
+
+function loadWaStatus() {
+  return api('/api/whatsapp/status')
+    .then(function (d) {
+      waStatus = d;
+      renderWaStatus();
+      loadWaInstanceSelect(d && d.instance);
+      var needQr = !!(d && d.exists && d.state !== 'open');
+      $('#wa-qr').classList.toggle('hidden', !needQr);
+      if (needQr) { fetchQr(); startQrPolling(); }
+      else stopQrPolling();
+    })
+    .catch(function (e) {
+      stopQrPolling();
+      if (e.status !== 401) $('#wa-status').innerHTML = '<span class="muted">Erro: ' + esc(e.message) + '</span>';
+    });
+}
+
+function renderQr(d) {
+  var box = $('#wa-qr-content');
+  if (d.base64 && String(d.base64).indexOf('data:image/') === 0) {
+    box.innerHTML = '<img src="' + esc(d.base64) + '" alt="QR code do WhatsApp">';
+  } else if (d.pairingCode) {
+    box.innerHTML =
+      '<div class="paircode">' + esc(d.pairingCode) + '</div>' +
+      '<p class="muted" style="font-size:12px;">Código de pareamento — digite no WhatsApp em Aparelhos conectados → Conectar com número.</p>';
+  } else {
+    box.innerHTML = '<p class="muted">QR ainda não disponível — nova tentativa em 20s…</p>';
+  }
+}
+
+function fetchQr() {
+  return api('/api/whatsapp/qr', { timeoutMs: 30000 })
+    .then(function (d) {
+      if (!d) return;
+      if (d.state === 'open') {
+        /* conectou durante o acompanhamento */
+        stopQrPolling();
+        $('#wa-qr').classList.add('hidden');
+        toast('WhatsApp conectado ✅');
+        return loadWaStatus();
+      }
+      renderQr(d);
+    })
+    .catch(function (e) {
+      if (e.status !== 401) $('#wa-qr-content').innerHTML = '<p class="muted">Erro ao buscar QR: ' + esc(e.message) + '</p>';
+    });
+}
+
+$('#btn-wa-instance').addEventListener('click', function () {
+  var btn = $('#btn-wa-instance');
+  setLoading(btn, true, 'Configurando…');
+  api('/api/whatsapp/instance', { method: 'POST', timeoutMs: 60000 })
+    .then(function (d) {
+      toast(d && d.created
+        ? 'Instância criada — escaneie o QR abaixo pra conectar 📲'
+        : 'Instância OK — webhook (re)configurado ✅');
+      return loadWaStatus();
+    })
+    .catch(function (e) { if (e.status !== 401) toast(e.message, 'err'); })
+    .finally(function () { setLoading(btn, false); });
+});
+
+$('#btn-wa-owner').addEventListener('click', function () {
+  var v = $('#wa-owner').value.trim();
+  if (!v) { toast('Informe o número do dono (com DDI).', 'err'); return; }
+  saveConfig({ evolution: { ownerJid: v } }, $('#btn-wa-owner'));
+});
+
+/* ============ CONFIG: WhatsApp (trocar instância ativa) ============ */
+function loadWaInstanceSelect(current) {
+  var sel = $('#wa-instance-select');
+  sel.innerHTML = '<option value="">carregando…</option>';
+  return api('/api/whatsapp/instances')
+    .then(function (r) {
+      var list = (r && r.instances) ? r.instances : [];
+      sel.innerHTML = '';
+      var names = list.map(function (it) { return it.name || it; });
+      // garante que a instância atual apareça mesmo se a Evolution não listar
+      // (ex.: chip novo ainda não criado lá)
+      if (current && names.indexOf(current) < 0) names.unshift(current);
+      if (!names.length) { sel.innerHTML = '<option value="">nenhuma instância encontrada</option>'; return; }
+      names.forEach(function (name) {
+        var item = list.filter(function (it) { return (it.name || it) === name; })[0];
+        var state = item && item.state ? item.state : null;
+        var opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name + (state ? ' (' + state + ')' : '');
+        sel.appendChild(opt);
+      });
+      sel.value = current || names[0];
+    })
+    .catch(function () {
+      // Falha ao listar (não confundir com Evolution fora do ar — o backend já
+      // degrada pra instances:[] nesse caso e o `current` acima cobre isso).
+      // Aqui é falha em chegar no PRÓPRIO painel — justo o momento de uma
+      // incidente em que o operador mais precisa trocar de instância, então
+      // não pode perder a instância atual da tela.
+      sel.innerHTML = current
+        ? '<option value="' + esc(current) + '">' + esc(current) + ' (erro ao listar — mantendo atual)</option>'
+        : '<option value="">erro ao carregar lista</option>';
+    });
+}
+
+$('#btn-wa-instance-reload').addEventListener('click', function () {
+  loadWaInstanceSelect(waStatus && waStatus.instance);
+});
+
+$('#btn-wa-instance-switch').addEventListener('click', function () {
+  var v = $('#wa-instance-select').value.trim();
+  if (!v) { toast('Escolha uma instância.', 'err'); return; }
+  if (waStatus && v === waStatus.instance) { toast('Essa instância já está ativa.'); return; }
+  // Escopo real: só troca a instância que POSTA NOS GRUPOS (config.evolution.instance).
+  // Disparos (aba Disparos) e Aquecedor (aba Aquecedor) têm suas PRÓPRIAS instâncias,
+  // configuradas à parte — o texto não pode sugerir que este botão cobre os três.
+  if (!confirm('Trocar a instância que POSTA NOS GRUPOS pra "' + v + '"? Isso NÃO muda a(s) instância(s) de Disparos nem do Aquecedor — troque-as separadamente nas respectivas abas se necessário. Se houver um post em andamento pela instância atual, pode terminar pelo chip antigo. Continuar?')) return;
+  // Limpa o QR/pairing code antigo ANTES de recarregar — senão o código da
+  // instância anterior fica na tela até o novo fetch responder (podia levar a
+  // escanear o QR errado durante uma troca às pressas).
+  $('#wa-qr-content').innerHTML = '<p class="muted">carregando…</p>';
+  var btn = $('#btn-wa-instance-switch');
+  saveConfig({ evolution: { instance: v } }, btn).then(function () {
+    toast('Instância dos grupos trocada pra "' + v + '" ✅');
+    return loadWaStatus();
+  });
+});
+
+/* ============ CONFIG: Shopee ============ */
+$('#btn-sp-save').addEventListener('click', function () {
+  var body = { shopee: { appId: $('#sp-appid').value.trim() } };
+  var secret = $('#sp-secret').value.trim();
+  if (secret) body.shopee.appSecret = secret; /* vazio = não altera */
+  saveConfig(body, $('#btn-sp-save'));
+});
+
+$('#btn-sp-test').addEventListener('click', function () {
+  var btn = $('#btn-sp-test');
+  var box = $('#sp-test-result');
+  box.innerHTML = '';
+  setLoading(btn, true, 'Testando…');
+  api('/api/config/shopee/test', { method: 'POST', timeoutMs: 60000 })
+    .then(function (d) {
+      if (d && d.ok && d.sample) {
+        box.innerHTML =
+          '<div class="test-res ok">✅ Conexão OK — exemplo: <b>' + esc(d.sample.title) + '</b> · ' +
+          esc(fmtBRL.format(Number(d.sample.price || 0))) + ' · comissão ' + esc(pct(d.sample.commissionRate)) + '</div>';
+      } else {
+        box.innerHTML = '<div class="test-res err">❌ ' + esc((d && d.error) || 'falha no teste') + '</div>';
+      }
+    })
+    .catch(function (e) {
+      if (e.status !== 401) box.innerHTML = '<div class="test-res err">❌ ' + esc(e.message) + '</div>';
+    })
+    .finally(function () { setLoading(btn, false); });
+});
+
+/* ============ CONFIG: Mercado Livre ============ */
+$('#btn-meli-extract').addEventListener('click', function () {
+  var url = $('#meli-link').value.trim();
+  if (!url) { toast('Cole um link de afiliado gerado no portal do ML.', 'err'); return; }
+  var btn = $('#btn-meli-extract');
+  setLoading(btn, true, 'Extraindo…');
+  api('/api/config/meli/extract', { method: 'POST', body: { url: url } })
+    .then(function (d) {
+      if (d && d.ok) {
+        $('#meli-word').value = d.mattWord || '';
+        $('#meli-tool').value = d.mattTool || '';
+        toast('Parâmetros extraídos — confira e clique em Salvar ✅');
+      } else {
+        toast((d && d.error) || 'link sem parâmetros de afiliado — gere o link no portal do ML e cole aqui', 'err');
+      }
+    })
+    .catch(function (e) { if (e.status !== 401) toast(e.message, 'err'); })
+    .finally(function () { setLoading(btn, false); });
+});
+
+$('#btn-meli-save').addEventListener('click', function () {
+  var auto = $('#meli-auto').checked;
+  if (auto && cfg && cfg.meli && !cfg.meli.autoLinks) {
+    if (!confirm('Ativar a conversão automática viola os Termos do programa de afiliados do ML (risco de comissões zeradas ou banimento). Ativar mesmo assim?')) return;
+  }
+  var meliBody = {
+    autoLinks: auto,
+    mattWord: $('#meli-word').value.trim(),
+    mattTool: $('#meli-tool').value.trim(),
+    tag: $('#meli-tag').value.trim()
+  };
+  var ck = $('#meli-cookie').value.trim(); if (ck) meliBody.cookie = ck;
+  var cs = $('#meli-csrf').value.trim(); if (cs) meliBody.csrf = cs;
+  saveConfig({ meli: meliBody }, $('#btn-meli-save'));
+});
+
+$('#btn-meli-testlink').addEventListener('click', function () {
+  var msg = $('#meli-testlink-result');
+  var url = prompt('Cole a URL de um produto do Mercado Livre para testar a geração do link:');
+  if (!url) return;
+  msg.textContent = 'Gerando…';
+  api('/api/config/meli/test-link', { method: 'POST', body: { url: url }, timeoutMs: 30000 })
+    .then(function (r) { msg.textContent = r.ok ? ('✅ ' + r.link) : ('❌ ' + (r.error || 'falhou')); })
+    .catch(function (e) { msg.textContent = '❌ ' + (e.message || 'erro'); });
+});
+
+/* ============ CONFIG: Amazon ============ */
+$('#btn-amazon-save').addEventListener('click', function () {
+  saveConfig({ amazon: { tag: $('#amazon-tag').value.trim() } }, $('#btn-amazon-save'));
+});
+
+$('#btn-amazon-test').addEventListener('click', function () {
+  var btn = $('#btn-amazon-test'); var box = $('#amazon-test-result');
+  box.innerHTML = '';
+  setLoading(btn, true, 'Testando…');
+  api('/api/config/amazon/test', { method: 'POST' })
+    .then(function (r) {
+      if (r && r.ok) {
+        box.innerHTML = '<div class="test-res ok">✅ Tag <b>' + esc(r.tag) + '</b> · exemplo:<br><a href="' + esc(r.example) +
+          '" target="_blank" rel="noopener">' + esc(r.example) + '</a>' + (r.warn ? ('<br>⚠️ ' + esc(r.warn)) : '') + '</div>';
+      } else {
+        box.innerHTML = '<div class="test-res err">❌ ' + esc((r && r.error) || 'falhou') + '</div>';
+      }
+    })
+    .catch(function (e) { if (e.status !== 401) box.innerHTML = '<div class="test-res err">❌ ' + esc(e.message) + '</div>'; })
+    .finally(function () { setLoading(btn, false); });
+});
+
+/* ============ CONFIG: AliExpress ============ */
+$('#btn-ali-save').addEventListener('click', function () {
+  var body = { appKey: $('#ali-key').value.trim(), trackingId: $('#ali-tid').value.trim() };
+  var sec = $('#ali-secret').value.trim(); if (sec) body.appSecret = sec;
+  saveConfig({ aliexpress: body }, $('#btn-ali-save'));
+});
+
+$('#btn-ali-test').addEventListener('click', function () {
+  var msg = $('#ali-test-result'); var btn = $('#btn-ali-test');
+  btn.disabled = true; msg.textContent = 'Testando (gerando link)…';
+  api('/api/config/aliexpress/test', { method: 'POST', body: {}, timeoutMs: 40000 })
+    .then(function (r) { msg.textContent = r.ok ? ('✅ link gerado: ' + r.link) : ('❌ ' + (r.error || 'falhou')); })
+    .catch(function (e) { msg.textContent = '❌ ' + (e.message || 'erro'); })
+    .finally(function () { btn.disabled = false; });
+});
+
+/* ============ CONFIG: Instagram (auto-post) ============ */
+function loadInstagram() {
+  return api('/api/instagram/status').then(function (s) {
+    var el = $('#ig-status'); if (!el) return;
+    el.textContent =
+      (s.configured ? ('✅ conectado' + (s.igUserId ? (' · id ' + s.igUserId) : '')) : '⚪ não conectado')
+      + ' · ' + (s.enabled ? '▶️ auto ON' : '⏸️ auto OFF')
+      + ' · hoje ' + (s.postedToday || 0) + '/' + (s.dailyCap || 0)
+      + (s.pending != null ? (' · fila ' + s.pending) : '')
+      + (s.errors ? (' · ⚠️ ' + s.errors + ' erro(s)') : '')
+      + (s.tokenExpiresAt ? (' · token até ' + new Date(s.tokenExpiresAt).toLocaleDateString('pt-BR')) : '');
+    var le = $('#ig-run-result');
+    if (le && s.lastError) le.textContent = '⚠️ último erro: ' + s.lastError;
+  }).catch(function () {
+    var el = $('#ig-status'); if (el) el.textContent = 'status indisponível';
+  });
+}
+
+// copia texto pra área de transferência (com fallback p/ navegadores antigos)
+function copyText(txt) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(function () { toast('Copiado ✅'); }).catch(function () { toast('Não consegui copiar', 'err'); });
+    return;
+  }
+  try {
+    var ta = document.createElement('textarea');
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    toast('Copiado ✅');
+  } catch (e) { toast('Não consegui copiar', 'err'); }
+}
+
+$('#btn-ig-copy-redirect').addEventListener('click', function () {
+  var base = (cfg && cfg.instagram && cfg.instagram.publicBaseUrl) || $('#ig-baseurl').value.trim();
+  if (!base) { toast('Defina a URL pública primeiro', 'err'); return; }
+  copyText(base.replace(/\/$/, '') + '/api/instagram/oauth/callback');
+});
+
+$('#btn-ig-app-save').addEventListener('click', function () {
+  var body = {};
+  var a = $('#ig-appid').value.trim(); if (a) body.appId = a;       // vazio NÃO apaga o App ID
+  var base = $('#ig-baseurl').value.trim(); if (base) body.publicBaseUrl = base; // parseUrl rejeita vazio
+  var sec = $('#ig-appsecret').value.trim(); if (sec) body.appSecret = sec;
+  if (!Object.keys(body).length) { toast('Preencha App ID / Secret / URL pública'); return; }
+  saveConfig({ instagram: body }, $('#btn-ig-app-save')).then(loadInstagram);
+});
+
+$('#btn-ig-disconnect').addEventListener('click', function () {
+  if (!confirm('Desconectar o Instagram? O token será apagado e o auto-post desligado.')) return;
+  var btn = $('#btn-ig-disconnect');
+  btn.disabled = true;
+  api('/api/instagram/disconnect', { method: 'POST' })
+    .then(function () { toast('Instagram desconectado'); return loadConfig().then(loadInstagram); })
+    .catch(function (e) { toast('❌ ' + (e.message || 'erro'), 'err'); })
+    .finally(function () { btn.disabled = false; });
+});
+
+$('#btn-ig-connect').addEventListener('click', function () {
+  var btn = $('#btn-ig-connect'); var msg = $('#ig-test-result');
+  btn.disabled = true; msg.textContent = 'Gerando link de conexão…';
+  api('/api/instagram/oauth/start').then(function (r) {
+    if (r.ok && r.url) {
+      window.open(r.url, '_blank');
+      msg.textContent = 'Abrimos o Instagram numa nova aba — faça login e autorize. Você volta pro painel automaticamente.';
+    } else { msg.textContent = '❌ ' + (r.error || 'falhou'); }
+  }).catch(function (e) { msg.textContent = '❌ ' + (e.message || 'erro'); })
+    .finally(function () { btn.disabled = false; });
+});
+
+$('#btn-ig-test').addEventListener('click', function () {
+  var btn = $('#btn-ig-test'); var msg = $('#ig-test-result');
+  btn.disabled = true; msg.textContent = 'Verificando…';
+  api('/api/instagram/test', { method: 'POST', body: {}, timeoutMs: 30000 }).then(function (r) {
+    msg.textContent = r.ok
+      ? ('✅ conectado como @' + (r.username || r.igUserId) + (r.accountType ? (' (' + r.accountType + ')') : ''))
+      : ('❌ ' + (r.error || 'falhou'));
+    return loadInstagram();
+  }).catch(function (e) { msg.textContent = '❌ ' + (e.message || 'erro'); })
+    .finally(function () { btn.disabled = false; });
+});
+
+$('#btn-ig-token-save').addEventListener('click', function () {
+  var tok = $('#ig-token').value.trim();
+  if (!tok) { $('#ig-test-result').textContent = '⚠️ Cole o token long-lived primeiro.'; return; }
+  var btn = $('#btn-ig-token-save'); var msg = $('#ig-test-result');
+  btn.disabled = true; msg.textContent = 'Validando e salvando…';
+  api('/api/instagram/test', { method: 'POST', body: { token: tok }, timeoutMs: 30000 }).then(function (r) {
+    msg.textContent = r.ok ? ('✅ salvo — conectado como @' + (r.username || r.igUserId)) : ('❌ ' + (r.error || 'falhou'));
+    if (r.ok) { toast('📸 Instagram conectado'); return loadConfig().then(loadInstagram); }
+  }).catch(function (e) { msg.textContent = '❌ ' + (e.message || 'erro'); })
+    .finally(function () { btn.disabled = false; });
+});
+
+$('#btn-ig-save').addEventListener('click', function () {
+  var body = {
+    enabled: $('#ig-enabled').checked,
+    caption: $('#ig-caption').value,
+    hashtags: $('#ig-hashtags').value.trim(),
+  };
+  var every = $('#ig-every').value.trim(); if (every) body.postEveryHours = every;
+  var cap = $('#ig-cap').value.trim(); if (cap) body.dailyCap = cap;
+  var ms = $('#ig-minscore').value.trim(); if (ms !== '') body.minScore = ms;
+  saveConfig({ instagram: body }, $('#btn-ig-save')).then(loadInstagram);
+});
+
+$('#btn-ig-run').addEventListener('click', function () {
+  var btn = $('#btn-ig-run'); var msg = $('#ig-run-result');
+  btn.disabled = true; msg.textContent = 'Publicando uma oferta de teste…';
+  api('/api/instagram/run-now', { method: 'POST', timeoutMs: 60000 }).then(function (r) {
+    if (r.ok) msg.textContent = '✅ Publicado no feed! (media ' + (r.mediaId || '—') + ')';
+    else if (r.skipped) msg.textContent = 'Nada publicado: ' + r.skipped + '.';
+    else msg.textContent = '❌ ' + (r.error || 'falhou');
+    return loadInstagram();
+  }).catch(function (e) { msg.textContent = '❌ ' + (e.message || 'erro'); })
+    .finally(function () { btn.disabled = false; });
+});
+
+/* volta do OAuth do Instagram (?ig=ok|err) → toast e limpa a URL */
+(function () {
+  var p = new URLSearchParams(location.search);
+  if (p.get('ig') === 'ok') { toast('📸 Instagram conectado: @' + (p.get('user') || '')); history.replaceState(null, '', location.pathname); }
+  else if (p.get('ig') === 'err') { toast('❌ Instagram: ' + (p.get('msg') || 'falhou'), 'err'); history.replaceState(null, '', location.pathname); }
+})();
+
+/* ============ CONFIG: Telegram (login guiado) ============ */
+var tgStep = 0;  /* 0=nenhum, 1=credenciais, 2=código, 3=senha 2FA */
+var tgCode = ''; /* guardado pra reenviar junto com a senha 2FA */
+
+function tgShowStep(n) {
+  tgStep = n;
+  $('#tg-step1').classList.toggle('hidden', n !== 1);
+  $('#tg-step2').classList.toggle('hidden', n !== 2);
+  $('#tg-step2b').classList.toggle('hidden', n !== 3);
+}
+
+function renderTgConfigStatus() {
+  if (!cfg) return;
+  var t = cfg.telegram || {};
+  $('#tg-status').innerHTML =
+    '<span class="st-badge ' + (t.sessionSet ? 'open' : '') + '">' + (t.sessionSet ? 'configurado' : 'não configurado') + '</span>' +
+    '<span class="st-badge ' + (t.monitorRunning ? 'open' : 'close') + '">monitor ' + (t.monitorRunning ? 'rodando' : 'parado') + '</span>' +
+    '<span class="muted">' + Number(t.channels || 0) + ' ' + (Number(t.channels) === 1 ? 'canal' : 'canais') + '</span>';
+  $('#btn-tg-disconnect').classList.toggle('hidden', !t.sessionSet);
+  /* não clobberar um login em andamento (passos 2/2b) */
+  if (t.sessionSet) tgShowStep(0);
+  else if (tgStep === 0) tgShowStep(1);
+}
+
+$('#tg-form1').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var apiId = $('#tg-apiid').value.trim();
+  var apiHash = $('#tg-apihash').value.trim();
+  var phone = $('#tg-phone').value.trim();
+  if (!/^\d+$/.test(apiId)) { toast('api_id deve ser numérico.', 'err'); return; }
+  if (!apiHash || !phone) { toast('Preencha api_hash e telefone (com DDI).', 'err'); return; }
+  var btn = $('#tg-form1 button[type=submit]');
+  setLoading(btn, true, 'Enviando código…');
+  api('/api/telegram/start-login', { method: 'POST', body: { apiId: Number(apiId), apiHash: apiHash, phone: phone }, timeoutMs: 60000 })
+    .then(function () {
+      toast('Código enviado — confira o app do Telegram 📲');
+      tgShowStep(2);
+      setTimeout(function () { $('#tg-code').focus(); }, 60);
+    })
+    .catch(function (err) { if (err.status !== 401) toast(err.message, 'err'); })
+    .finally(function () { setLoading(btn, false); });
+});
+
+function tgConfirm(code, password, btn) {
+  var body = { code: code };
+  if (password) body.password = password;
+  setLoading(btn, true, 'Confirmando…');
+  api('/api/telegram/confirm-code', { method: 'POST', body: body, timeoutMs: 60000 })
+    .then(function (d) {
+      if (d && d.ok && d.connected) {
+        toast('Telegram conectado — monitor ligado ✅');
+        $('#tg-code').value = '';
+        $('#tg-pass').value = '';
+        $('#tg-apihash').value = '';
+        tgShowStep(0);
+        return loadConfig();
+      }
+      if (d && d.needPassword) {
+        toast('Conta com verificação em duas etapas — informe a senha 2FA.');
+        tgShowStep(3);
+        setTimeout(function () { $('#tg-pass').focus(); }, 60);
+        return;
+      }
+      toast((d && d.error) || 'Resposta inesperada do servidor.', 'err');
+    })
+    .catch(function (err) { if (err.status !== 401) toast(err.message, 'err'); })
+    .finally(function () { setLoading(btn, false); });
+}
+
+$('#tg-step2').addEventListener('submit', function (e) {
+  e.preventDefault();
+  tgCode = $('#tg-code').value.trim();
+  if (!tgCode) return;
+  tgConfirm(tgCode, '', $('#tg-step2 button[type=submit]'));
+});
+
+$('#tg-step2b').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var pass = $('#tg-pass').value;
+  if (!pass) return;
+  tgConfirm(tgCode, pass, $('#tg-step2b button[type=submit]'));
+});
+
+$('#btn-tg-disconnect').addEventListener('click', function () {
+  if (!confirm('Desconectar o Telegram? O monitor de canais para e a sessão é apagada.')) return;
+  var btn = $('#btn-tg-disconnect');
+  setLoading(btn, true);
+  api('/api/telegram/disconnect', { method: 'POST', timeoutMs: 60000 })
+    .then(function () {
+      toast('Telegram desconectado.');
+      return loadConfig();
+    })
+    .catch(function (e) { if (e.status !== 401) toast(e.message, 'err'); })
+    .finally(function () { setLoading(btn, false); });
+});
+
+/* ============ CONFIG: IA (copy — Ollama ↔ Claude) ============ */
+function renderCopyProvider() {
+  var p = $('#copy-provider').value;
+  $('#copy-ollama-fields').classList.toggle('hidden', p !== 'ollama');
+  $('#copy-anthropic-fields').classList.toggle('hidden', p !== 'anthropic');
+  $('#copy-openai-fields').classList.toggle('hidden', p !== 'openai');
+  $('#copy-test-wrap').classList.toggle('hidden', p === 'ollama');
+}
+
+$('#copy-provider').addEventListener('change', renderCopyProvider);
+
+$('#btn-copy-save').addEventListener('click', function () {
+  var provider = $('#copy-provider').value;
+  if (['ollama', 'anthropic', 'openai'].indexOf(provider) < 0) provider = 'ollama';
+  var body = {
+    ollama: {
+      url: $('#ol-url').value.trim(),
+      model: $('#ol-model').value.trim()
+    },
+    copy: {
+      provider: provider
+    }
+  };
+  /* *Model usa allowEmpty:false no settings-store: só envia quando não-vazio,
+     senão um campo oculto vazio reprovaria o PUT inteiro (tudo-ou-nada) e
+     derrubaria junto as mudanças de ollama.url/model. Chave vazia = não altera. */
+  var amodel = $('#copy-anthropic-model').value.trim();
+  if (amodel) body.copy.anthropicModel = amodel;
+  var akey = $('#copy-anthropic-key').value.trim();
+  if (akey) body.copy.anthropicApiKey = akey;
+  var omodel = $('#copy-openai-model').value.trim();
+  if (omodel) body.copy.openaiModel = omodel;
+  var okey = $('#copy-openai-key').value.trim();
+  if (okey) body.copy.openaiApiKey = okey;
+  body.copy.styleExtra = $('#copy-style').value.trim(); // allowEmpty: vazio limpa
+  body.copy.persona = $('#copy-persona').value.trim();  // vazio = padrão embutido
+  body.copy.replyModel = $('#copy-reply-model').value.trim(); // vazio = herda o modelo da copy
+  saveConfig(body, $('#btn-copy-save'));
+});
+
+/* ============ CONFIG: Conteúdo e copy ============ */
+$('#btn-content-save').addEventListener('click', function () {
+  saveConfig({ content: {
+    denylist: $('#ct-denylist').value,
+    disclosure: $('#ct-disclosure').value.trim(),
+    footer: $('#ct-footer').value.trim(),
+    templates: $('#ct-templates').value,
+    penaltylist: $('#ct-penaltylist').value,
+    ctas: $('#ct-ctas').value
+  } }, $('#btn-content-save'));
+});
+
+$('#btn-copy-test').addEventListener('click', function () {
+  var btn = $('#btn-copy-test');
+  var box = $('#copy-test-result');
+  box.innerHTML = '';
+  setLoading(btn, true, 'Gerando…');
+  api('/api/config/copy/test', { method: 'POST', timeoutMs: 60000 })
+    .then(function (d) {
+      if (d && d.ok && d.hook) {
+        box.innerHTML =
+          '<div class="test-res ok">✅ Gancho (' + esc(d.provider || '') + '): <b>' + esc(d.hook) + '</b></div>';
+      } else {
+        box.innerHTML = '<div class="test-res err">❌ ' + esc((d && d.error) || 'falha ao gerar copy') + '</div>';
+      }
+    })
+    .catch(function (e) {
+      if (e.status !== 401) box.innerHTML = '<div class="test-res err">❌ ' + esc(e.message) + '</div>';
+    })
+    .finally(function () { setLoading(btn, false); });
+});
+
+/* ============ CONFIG: Operação ============ */
+$('#btn-op-save').addEventListener('click', function () {
+  var op = {
+    postingWindow: $('#op-window').value.trim(),
+    ramp: $('#op-ramp').value.trim(),
+    peakHours: $('#op-peak').value.trim(),
+    groupSpacingMs: $('#op-spacing').value.trim(),
+    sendDelayMs: $('#op-delay').value.trim()
+  };
+  var nums = {
+    'Dedup (dias)': ['dedupDays', $('#op-dedup').value],
+    'TTL (horas)': ['offerTtlHours', $('#op-ttl').value],
+    'Comissão mínima': ['minCommission', $('#op-mincomm').value],
+    'Desconto mínimo': ['minDiscount', $('#op-mindisc').value],
+    'Vendas mínimas': ['minSales', $('#op-minsales').value],
+    'Nota mínima': ['minRating', $('#op-minrating').value],
+    'Score mínimo': ['minScore', $('#op-minscore').value],
+    'Mix vestuário': ['mixVestuario', $('#op-mix-vest').value],
+    'Mix acessórios': ['mixAcessorios', $('#op-mix-aces').value],
+    'Mix suplementos': ['mixSuplementos', $('#op-mix-sup').value],
+    'Peso comissão': ['weightCommission', $('#op-w-comm').value],
+    'Peso desconto': ['weightDiscount', $('#op-w-disc').value],
+    'Peso popularidade': ['weightPopularity', $('#op-w-pop').value],
+    'Penalidade termo genérico': ['penaltyMult', $('#op-penalty').value],
+    'Penalidade sem avaliação': ['noReviewMult', $('#op-noreview').value],
+    'Penalidade sem vendas': ['noSalesMult', $('#op-nosales').value]
+  };
+  for (var label in nums) {
+    var raw = nums[label][1];
+    var n = Number(raw);
+    if (String(raw).trim() === '' || isNaN(n) || n < 0) {
+      toast('Valor inválido em “' + label + '”.', 'err');
+      return;
+    }
+    op[nums[label][0]] = n;
+  }
+  saveConfig({ operation: op }, $('#btn-op-save'));
+});
+
+/* ============ DISPAROS ============ */
+// Gera o ramp de aquecimento (4 etapas) até o alvo n. 1 valor = fixo.
+function bcWarmupRamp(n) {
+  var steps = [0.25, 0.5, 0.75, 1].map(function (f) { return Math.max(1, Math.round(n * f)); });
+  steps[steps.length - 1] = n; // garante terminar no alvo
+  var out = [];
+  steps.forEach(function (v) { if (out[out.length - 1] !== v) out.push(v); }); // sem repetidos
+  return out;
+}
+
+// Lê os campos e devolve o ramp (array). null se o alvo for inválido.
+function bcRampFromInputs() {
+  var n = Number($('#bc-perday').value);
+  if (!Number.isInteger(n) || n < 1) return null;
+  return $('#bc-warmup').checked ? bcWarmupRamp(n) : [n];
+}
+
+// Atualiza o texto do "Plano" embaixo do campo Disparos por dia.
+function bcRenderPlan() {
+  // aquecimento só faz sentido com 2+ disparos/dia — abaixo disso, desabilita
+  // (e desmarca) pra estado salvo e exibido sempre baterem.
+  var n0 = Number($('#bc-perday').value);
+  var warm = $('#bc-warmup');
+  if (!Number.isInteger(n0) || n0 < 2) { warm.disabled = true; warm.checked = false; }
+  else { warm.disabled = false; }
+  var ramp = bcRampFromInputs();
+  var el = $('#bc-plan');
+  if (!ramp) { el.textContent = 'informe quantos disparos por dia'; return; }
+  if (ramp.length === 1) { el.textContent = ramp[0] + '/dia (fixo, todo dia)'; return; }
+  el.textContent = ramp.map(function (v, i) {
+    return (i === ramp.length - 1) ? ('Semana ' + (i + 1) + '+: ' + v) : ('Semana ' + (i + 1) + ': ' + v);
+  }).join(' · ');
+}
+
+$('#bc-perday').addEventListener('input', bcRenderPlan);
+$('#bc-warmup').addEventListener('change', bcRenderPlan);
+
+// Mostra os motivos agregados das falhas de disparo ("180 sem whatsapp, 20 ...").
+function showBroadcastFailures() {
+  var box = $('#bc-fail-detail');
+  box.innerHTML = '<span class="muted">carregando motivos…</span>';
+  api('/api/broadcast/failures')
+    .then(function (d) {
+      var f = (d && d.failures) || [];
+      if (!f.length) { box.textContent = 'sem falhas registradas'; return; }
+      box.innerHTML = '<b>Motivos das falhas:</b><br>' + f.map(function (x) {
+        return '• ' + esc(x.reason) + ': <b>' + x.n + '</b>';
+      }).join('<br>');
+    })
+    .catch(function () { box.textContent = 'não foi possível carregar os motivos'; });
+}
+
+function getSelectedInstances() {
+  return Array.from(document.querySelectorAll('#bc-instances-wrap .inst-chip.selected'))
+    .map(function (el) { return el.dataset.name; });
+}
+
+function loadInstanceOptions(selectedNames) {
+  var wrap = $('#bc-instances-wrap');
+  var sel = Array.isArray(selectedNames) ? selectedNames : (selectedNames ? [selectedNames] : []);
+  wrap.innerHTML = '<span class="muted" style="font-size:13px;">carregando…</span>';
+  return api('/api/whatsapp/instances')
+    .then(function (r) {
+      var list = (r && r.instances) ? r.instances : [];
+      if (!list.length) { wrap.innerHTML = '<span class="muted" style="font-size:13px;">nenhuma instância encontrada</span>'; return; }
+      wrap.innerHTML = '';
+      list.forEach(function (item) {
+        var name  = item.name  || item;
+        var state = item.state || 'close';
+        var chip = document.createElement('div');
+        chip.className = 'inst-chip' + (sel.indexOf(name) >= 0 ? ' selected' : '');
+        chip.dataset.name = name;
+        chip.innerHTML = '<span class="idot ' + (state === 'open' ? 'open' : 'close') + '"></span>' +
+          '<span>' + esc(name) + '</span>' +
+          '<span class="istate">' + esc(state) + '</span>';
+        chip.addEventListener('click', function () { chip.classList.toggle('selected'); });
+        wrap.appendChild(chip);
+      });
+    })
+    .catch(function () {
+      wrap.innerHTML = '<span class="muted" style="font-size:13px;">Evolution indisponível</span>';
+    });
+}
+
+function loadWarmer() {
+  return api('/api/warmer/status').then(function (s) {
+    s = s || {};
+    $('#wm-status').innerHTML =
+      (s.enabled ? '🟢 <b>Ligado</b>' : '⚪ <b>Desligado</b>') +
+      ' — chips conectados: <b>' + (s.chips || 0) + '</b>' +
+      ' · enviadas hoje: <b>' + (s.sentToday || 0) + '</b>' +
+      ' · conversas abertas: <b>' + (s.openThreads || 0) + '</b>' +
+      (s.nextAt ? ' · próximo: ' + new Date(s.nextAt).toLocaleTimeString('pt-BR') : '');
+    var sp = String(s.spacingMs || '20000-120000').split('-');
+    $('#wm-space-min').value = Math.round((+sp[0] || 20000) / 1000);
+    $('#wm-space-max').value = Math.round((+sp[1] || 120000) / 1000);
+    $('#wm-window').value = s.window || '07:00-23:00';
+    $('#wm-cap').value = s.dailyCap || 0;
+    $('#wm-ramp').value = s.rampDays || 0;
+    var wrap = $('#wm-instances-wrap');
+    var insts = s.instances || [];
+    var allow = String(s.allowlist || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+    if (!insts.length) {
+      wrap.innerHTML = '<span class="muted" style="font-size:13px;">nenhum chip conectado</span>';
+    } else {
+      wrap.innerHTML = insts.map(function (name) {
+        var ck = (allow.indexOf(name) >= 0) ? ' checked' : '';
+        return '<label class="bc-check" style="display:flex;align-items:center;gap:8px;margin:4px 0;">' +
+          '<input type="checkbox" class="wm-inst" value="' + name + '"' + ck + ' style="width:auto;margin:0;">' +
+          '<span>' + name + '</span></label>';
+      }).join('');
+    }
+    var twrap = $('#wm-targets-wrap');
+    var targets = s.targets || [];
+    if (!targets.length) {
+      twrap.innerHTML = '<span class="muted" style="font-size:13px;">nenhum número na lista</span>';
+    } else {
+      twrap.innerHTML = targets.map(function (phone) {
+        return '<span class="inst-chip" style="display:inline-flex;align-items:center;gap:6px;margin:2px 4px 2px 0;">' +
+          '<span>' + esc(phone) + '</span>' +
+          '<button type="button" class="wm-target-remove" data-phone="' + esc(phone) + '" style="border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;">✕</button>' +
+          '</span>';
+      }).join('');
+      Array.prototype.slice.call(twrap.querySelectorAll('.wm-target-remove')).forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          if (!confirm('Remover ' + btn.dataset.phone + ' da lista de alvos do aquecedor?')) return;
+          api('/api/warmer/targets/remove', { method: 'POST', body: { number: btn.dataset.phone } }).then(loadWarmer);
+        });
+      });
+    }
+  }).catch(function () {
+    $('#wm-status').innerHTML = '<span class="muted">erro ao carregar</span>';
+  });
+}
+
+$('#btn-wm-target-add').addEventListener('click', function () {
+  var btn = this; var input = $('#wm-target-add');
+  var number = input.value.trim();
+  if (!number) return;
+  setLoading(btn, true);
+  api('/api/warmer/targets/add', { method: 'POST', body: { number: number } })
+    .then(function () { input.value = ''; return loadWarmer(); })
+    .catch(function () { alert('número inválido'); })
+    .finally(function () { setLoading(btn, false); });
+});
+
+$('#btn-wm-blast').addEventListener('click', function () {
+  var btn = this; var number = $('#wm-target-number').value.trim();
+  var result = $('#wm-blast-result');
+  if (!number) { result.textContent = 'informe um número.'; return; }
+  setLoading(btn, true);
+  result.textContent = 'disparando…';
+  api('/api/warmer/blast', { method: 'POST', body: { number: number } })
+    .then(function (r) {
+      r = r || {};
+      result.textContent = r.ok
+        ? ('✅ enviado por ' + r.sent + '/' + r.total + ' chip(s).')
+        : ('❌ ' + (r.error || 'falha no envio (0/' + (r.total || 0) + ' chips)'));
+    })
+    .catch(function () { result.textContent = 'erro ao disparar'; })
+    .finally(function () { setLoading(btn, false); });
+});
+
+$('#btn-wm-on').addEventListener('click', function () {
+  var btn = this; setLoading(btn, true);
+  api('/api/warmer/toggle', { method: 'POST', body: { enabled: true } })
+    .then(loadWarmer).finally(function () { setLoading(btn, false); });
+});
+$('#btn-wm-off').addEventListener('click', function () {
+  var btn = this; setLoading(btn, true);
+  api('/api/warmer/toggle', { method: 'POST', body: { enabled: false } })
+    .then(loadWarmer).finally(function () { setLoading(btn, false); });
+});
+$('#btn-wm-refresh').addEventListener('click', loadWarmer);
+$('#btn-wm-save').addEventListener('click', function () {
+  var btn = this; setLoading(btn, true);
+  api('/api/warmer/settings', { method: 'POST', body: {
+    spacingMin: +$('#wm-space-min').value,
+    spacingMax: +$('#wm-space-max').value,
+    window: $('#wm-window').value.trim(),
+    dailyCap: +$('#wm-cap').value,
+    rampDays: +$('#wm-ramp').value,
+    instances: Array.prototype.slice.call(document.querySelectorAll('.wm-inst:checked')).map(function (el) { return el.value; })
+  } }).then(loadWarmer).finally(function () { setLoading(btn, false); });
+});
+function loadBroadcast() {
+  return Promise.all([api('/api/broadcast'), api('/api/config')])
+    .then(function (arr) {
+      var s = arr[0] || {};
+      var bc = (arr[1] || {}).broadcast || {};
+      var badge = s.paused ? '⏸️ <b>PAUSADO</b>' : '▶️ <b>ATIVO</b>';
+      var failHtml = (s.failed || 0) > 0
+        ? 'falhas: <a href="#" id="bc-fail-link" title="ver motivos"><b>' + s.failed + '</b></a>'
+        : 'falhas: 0';
+      var instDisplay = (s.instances && s.instances.length) ? s.instances.join(', ') : (s.instance || '—');
+      $('#bc-status').innerHTML = badge + ' &nbsp;|&nbsp; instâncias: <b>' + esc(instDisplay) + '</b>' +
+        '<br>📇 fila: <b>' + (s.pending || 0) + '</b> · enviados: <b>' + (s.sent || 0) + '</b> · ' + failHtml + ' · opt-out: ' + (s.optout || 0) +
+        '<br>📤 hoje: <b>' + (s.sentToday || 0) + ' / ' + (s.dailyTarget || 0) + '</b> (teto do dia)' +
+        '<br>⚙️ situação: <b>' + esc(s.reason || '—') + '</b>' +
+        (s.configured ? '' : '<br>⚠️ <b>falta configurar instância + link</b>');
+      var fl = $('#bc-fail-link');
+      if (fl) fl.addEventListener('click', function (ev) { ev.preventDefault(); showBroadcastFailures(); });
+      loadInstanceOptions(bc.instances && bc.instances.length ? bc.instances : (bc.instance ? [bc.instance] : []));
+      // links: usa a lista (rodízio); cai no único antigo se a lista vier vazia
+      var links = (bc.inviteLinks && bc.inviteLinks.length) ? bc.inviteLinks : (bc.inviteLink ? [bc.inviteLink] : []);
+      $('#bc-links').value = links.join('\n');
+      $('#bc-messages').value = (bc.messages || []).join('\n');
+
+      // disparos/dia + aquecimento (a partir do ramp salvo)
+      var ramp = String(bc.dailyRamp || '').split(',').map(function (x) { return Number(x.trim()); }).filter(function (x) { return Number.isInteger(x) && x > 0; });
+      $('#bc-perday').value = ramp.length ? ramp[ramp.length - 1] : '';
+      $('#bc-warmup').checked = ramp.length > 1;
+      bcRenderPlan();
+
+      // espaçamento ms → segundos
+      var sp = String(bc.spacingMs || '45000-150000').split('-');
+      $('#bc-space-min').value = Math.round((Number(sp[0]) || 45000) / 1000);
+      $('#bc-space-max').value = Math.round((Number(sp[1]) || 150000) / 1000);
+
+      // janela HH:MM-HH:MM → 2 horários
+      var win = String(bc.window || '09:00-21:00').split('-');
+      $('#bc-win-start').value = (win[0] || '09:00').trim();
+      $('#bc-win-end').value = (win[1] || '21:00').trim();
+
+      // boas-vindas / feedback de saída (DM)
+      $('#bc-groupdm').checked = !!bc.groupDmEnabled;
+      $('#bc-welcome').value = bc.welcomeText || '';
+      $('#bc-exit').value = bc.exitFeedbackText || '';
+
+      var rampArr = String(bc.dailyRamp || '').split(',').map(function (x) { return Number(x.trim()); }).filter(function (x) { return x > 0; });
+      var rampTxt = rampArr.length <= 1 ? ((rampArr[0] || '?') + '/dia') : (rampArr[rampArr.length - 1] + '/dia (aquecendo: ' + rampArr.join(' → ') + ')');
+      $('#bc-cadence').textContent = rampTxt + ' · 1 envio a cada ' + (sp[0] / 1000) + '–' + (sp[1] / 1000) + 's · das ' + String(bc.window || '09:00-21:00').replace('-', ' às ');
+    })
+    .catch(function () {});
+}
+
+$('#btn-bc-refresh').addEventListener('click', loadBroadcast);
+
+$('#btn-bc-instance-reload').addEventListener('click', function () {
+  loadInstanceOptions(getSelectedInstances());
+});
+
+$('#btn-bc-save').addEventListener('click', function () {
+  var msgs = $('#bc-messages').value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+  var links = $('#bc-links').value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+
+  var ramp = bcRampFromInputs();
+  if (!ramp) { toast('Informe quantos disparos por dia (número inteiro ≥ 1).', 'err'); return; }
+
+  var smin = Number($('#bc-space-min').value), smax = Number($('#bc-space-max').value);
+  if (!Number.isInteger(smin) || !Number.isInteger(smax) || smin < 1 || smax < 1 || smin > smax) {
+    toast('Espaçamento inválido: mínimo e máximo em segundos, e o mínimo ≤ máximo.', 'err'); return;
+  }
+  var wstart = $('#bc-win-start').value, wend = $('#bc-win-end').value;
+  if (!wstart || !wend) { toast('Defina o horário de início e fim dos disparos.', 'err'); return; }
+  if (wstart >= wend) { toast('O horário de início deve ser antes do fim.', 'err'); return; }
+
+  var bc = {
+    instances: getSelectedInstances(),
+    instance: getSelectedInstances()[0] || '',
+    inviteLinks: links,
+    inviteLink: links[0] || '', // 1º link como fallback (teste/guards antigos)
+    messages: msgs,
+    dailyRamp: ramp.join(','),
+    spacingMs: (smin * 1000) + '-' + (smax * 1000),
+    window: wstart + '-' + wend
+  };
+  saveConfig({ broadcast: bc }, $('#btn-bc-save')).then(loadBroadcast);
+});
+
+$('#btn-bc-dm-save').addEventListener('click', function () {
+  saveConfig({ broadcast: {
+    groupDmEnabled: $('#bc-groupdm').checked,
+    welcomeText: $('#bc-welcome').value.trim(),
+    exitFeedbackText: $('#bc-exit').value.trim()
+  } }, $('#btn-bc-dm-save')).then(loadBroadcast);
+});
+
+$('#btn-bc-resume').addEventListener('click', function () {
+  if (!confirm('INICIAR os disparos? ⚠️ risco real de ban do número — use um chip dedicado, não o do sistema.')) return;
+  var btn = $('#btn-bc-resume'); setLoading(btn, true);
+  api('/api/broadcast/resume', { method: 'POST' })
+    .then(function () { toast('▶️ Disparos iniciados'); return loadBroadcast(); })
+    .catch(function (e) { if (e.status !== 401) toast(e.message, 'err'); })
+    .finally(function () { setLoading(btn, false); });
+});
+
+$('#btn-bc-pause').addEventListener('click', function () {
+  var btn = $('#btn-bc-pause'); setLoading(btn, true);
+  api('/api/broadcast/pause', { method: 'POST' })
+    .then(function () { toast('⏸️ Disparos pausados'); return loadBroadcast(); })
+    .catch(function (e) { if (e.status !== 401) toast(e.message, 'err'); })
+    .finally(function () { setLoading(btn, false); });
+});
+
+$('#btn-bc-import').addEventListener('click', function () {
+  var text = $('#bc-import').value.trim();
+  if (!text) { $('#bc-import-result').textContent = 'Cole os números primeiro.'; return; }
+  var btn = $('#btn-bc-import'); setLoading(btn, true);
+  api('/api/broadcast/contacts', { method: 'POST', body: { text: text } })
+    .then(function (r) {
+      $('#bc-import-result').textContent = '✅ ' + r.adicionados + ' adicionados · ' + r.duplicados + ' duplicados · ' + r.invalidos + ' inválidos (de ' + r.total + ').';
+      $('#bc-import').value = '';
+      return loadBroadcast();
+    })
+    .catch(function (e) { $('#bc-import-result').textContent = '❌ ' + (e.message || 'falhou'); })
+    .finally(function () { setLoading(btn, false); });
+});
+
+$('#btn-bc-file-import').addEventListener('click', function () {
+  var f = $('#bc-file').files[0];
+  var msg = $('#bc-import-result');
+  if (!f) { msg.textContent = 'Escolha um arquivo CSV/TXT primeiro.'; return; }
+  var btn = $('#btn-bc-file-import'); setLoading(btn, true);
+  msg.textContent = 'Lendo arquivo…';
+  var reader = new FileReader();
+  reader.onload = function () {
+    var lines = String(reader.result || '').split(/\r?\n/).filter(function (l) { return l.trim(); });
+    if (!lines.length) { msg.textContent = 'Arquivo vazio.'; setLoading(btn, false); return; }
+    var CHUNK = 3000;
+    var acc = { adicionados: 0, duplicados: 0, invalidos: 0, total: 0 };
+    var i = 0;
+    function sendNext() {
+      if (i >= lines.length) {
+        msg.textContent = '✅ ' + acc.adicionados + ' adicionados · ' + acc.duplicados + ' duplicados · ' + acc.invalidos + ' inválidos (de ' + acc.total + ' linhas).';
+        $('#bc-file').value = '';
+        setLoading(btn, false);
+        loadBroadcast();
+        return;
+      }
+      var chunk = lines.slice(i, i + CHUNK);
+      msg.textContent = 'Importando… ' + Math.min(i + CHUNK, lines.length) + '/' + lines.length;
+      api('/api/broadcast/contacts', { method: 'POST', body: { text: chunk.join('\n') }, timeoutMs: 120000 })
+        .then(function (r) {
+          acc.adicionados += r.adicionados; acc.duplicados += r.duplicados; acc.invalidos += r.invalidos; acc.total += r.total;
+          i += CHUNK;
+          sendNext();
+        })
+        .catch(function (e) { msg.textContent = '❌ parou em ' + i + ' linhas: ' + (e.message || 'falhou'); setLoading(btn, false); });
+    }
+    sendNext();
+  };
+  reader.onerror = function () { msg.textContent = '❌ erro ao ler o arquivo'; setLoading(btn, false); };
+  reader.readAsText(f);
+});
+
+$('#btn-bc-clear').addEventListener('click', function () {
+  if (!confirm('Limpar a fila (remove pending + falhas; mantém enviados e opt-out)?')) return;
+  api('/api/broadcast/clear', { method: 'POST' })
+    .then(function (r) { toast('🗑️ ' + r.removed + ' removidos'); return loadBroadcast(); })
+    .catch(function (e) { if (e.status !== 401) toast(e.message, 'err'); });
+});
+
+$('#btn-bc-test').addEventListener('click', function () {
+  var num = $('#bc-test-number').value.trim();
+  var msg = $('#bc-test-result');
+  if (!num) { msg.textContent = 'Informe um número.'; return; }
+  var btn = $('#btn-bc-test'); setLoading(btn, true); msg.textContent = 'Enviando…';
+  api('/api/broadcast/test', { method: 'POST', body: { number: num }, timeoutMs: 30000 })
+    .then(function (r) { msg.textContent = r.ok ? ('✅ enviado! prévia: ' + (r.preview || '')) : ('❌ ' + (r.error || 'falhou')); })
+    .catch(function (e) { msg.textContent = '❌ ' + (e.message || 'erro'); })
+    .finally(function () { setLoading(btn, false); });
+});
+
+/* ============ boot ============ */
+if (token) enterApp();
+else showLogin();
+</script>
+</body>
+</html>

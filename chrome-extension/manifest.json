@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "ML Afiliados → AFFILIATE",
+  "version": "1.0.0",
+  "description": "Captura cookie + x-csrf-token da sessão do portal de afiliados do Mercado Livre e envia pro painel AFFILIATE num clique.",
+  "permissions": ["webRequest", "cookies", "storage"],
+  "host_permissions": [
+    "*://*.mercadolivre.com.br/*",
+    "https://*.ngrok-free.dev/*",
+    "http://10.0.0.254/*"
+  ],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html", "default_title": "ML Afiliados → AFFILIATE" }
+}

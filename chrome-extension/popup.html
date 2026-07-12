@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: system-ui, sans-serif; width: 320px; margin: 0; padding: 14px; font-size: 13px; color: #111; }
+    h1 { font-size: 14px; margin: 0 0 10px; }
+    label { display: block; margin: 8px 0 2px; font-weight: 600; font-size: 12px; }
+    input { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 12px; }
+    button { margin-top: 10px; width: 100%; padding: 8px; border: 0; border-radius: 6px; background: #2563eb; color: #fff; font-weight: 600; cursor: pointer; }
+    button.ghost { background: #f1f5f9; color: #111; }
+    .status { margin: 10px 0; padding: 8px; border-radius: 6px; background: #f8fafc; font-size: 12px; }
+    .ok { color: #16a34a; font-weight: 700; }
+    .no { color: #b91c1c; font-weight: 700; }
+    .msg { margin-top: 8px; font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+    .muted { color: #64748b; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <h1>🛍️ ML Afiliados → AFFILIATE</h1>
+
+  <div class="status" id="status">carregando…</div>
+
+  <label>URL do painel</label>
+  <input id="panel" placeholder="https://mantra-grain-tinkling.ngrok-free.dev">
+  <label>Admin token</label>
+  <input id="token" type="password" placeholder="ADMIN_TOKEN do .env">
+  <label>tag / canal de divulgação</label>
+  <input id="tag" placeholder="seu_canal">
+
+  <button id="send">Enviar sessão pro painel</button>
+  <button id="recapture" class="ghost">Recapturar cookie (fallback)</button>
+
+  <p class="muted">Como usar: logue no portal de afiliados, abra o <b>linkbuilder</b> e gere 1 link (ou só navegue) — a extensão captura a sessão sozinha. Depois clique em <b>Enviar</b>.</p>
+  <div class="msg" id="msg"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "name": "affiliate-fitness",
+  "version": "1.0.0",
+  "description": "Sistema de afiliados fitness: busca ofertas (Shopee API + Mercado Livre + Telegram), ranqueia, gera copy com IA local e posta em grupos de WhatsApp via Evolution API",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "migrate": "node src/db.js --migrate",
+    "telegram:login": "node scripts/telegram-login.js",
+    "groups:setup": "node scripts/setup-groups.js",
+    "smoke": "node scripts/smoke.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "node-cron": "^3.0.3",
+    "pg": "^8.13.0",
+    "telegram": "^2.26.0",
+    "zod": "^4.4.3"
+  }
+}

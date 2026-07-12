@@ -1,0 +1,7 @@
+node_modules/
+.env
+.env.local
+*.log
+.remember/
+.claude/settings.local.json
+src/catalog.js.bak
