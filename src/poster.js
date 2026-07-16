@@ -12,37 +12,63 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const subSafe = (s) => String(s ?? '').replace(/[^A-Za-z0-9]/g, '').slice(0, 40);
 
 /**
- * Chamada base à Evolution. POST com body JSON; GET se body === undefined.
- * Retorna o JSON da resposta ou null (logando o erro).
+ * Chamada base à Evolution com retry automático (backoff exponencial).
+ * POST com body JSON; GET se body === undefined.
+ * Retorna o JSON da resposta ou null (logando o erro após todas as tentativas).
  */
-export async function evoFetch(path, body) {
+export async function evoFetch(path, body, { maxRetries = 3, delayMs = 1000 } = {}) {
   const url = `${config.evolution.url}${path}`;
-  try {
-    const res = await fetch(url, {
-      method: body === undefined ? 'GET' : 'POST',
-      headers: {
-        apikey: config.evolution.apikey,
-        'Content-Type': 'application/json',
-      },
-      body: body === undefined ? undefined : JSON.stringify(body),
-      signal: AbortSignal.timeout(30_000),
-    });
-    const text = await res.text();
-    let json = null;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      json = text ? JSON.parse(text) : null;
-    } catch {
-      json = null;
-    }
-    if (!res.ok) {
-      console.log(`[poster] evoFetch ${path} HTTP ${res.status}: ${text.slice(0, 300)}`);
+      const res = await fetch(url, {
+        method: body === undefined ? 'GET' : 'POST',
+        headers: {
+          apikey: config.evolution.apikey,
+          'Content-Type': 'application/json',
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
+        signal: AbortSignal.timeout(30_000),
+      });
+      const text = await res.text();
+      let json = null;
+      try {
+        json = text ? JSON.parse(text) : null;
+      } catch {
+        json = null;
+      }
+      if (!res.ok) {
+        lastError = `HTTP ${res.status}: ${text.slice(0, 300)}`;
+        // Retry em erros de servidor (5xx), mas não em erros de cliente (4xx)
+        if (res.status >= 500 && attempt < maxRetries) {
+          const backoff = delayMs * Math.pow(2, attempt - 1);
+          console.log(`[poster] evoFetch ${path} tentativa ${attempt}/${maxRetries} falhou (${res.status}), retry em ${backoff}ms`);
+          await sleep(backoff);
+          continue;
+        }
+        console.log(`[poster] evoFetch ${path} falhou (final): ${lastError}`);
+        return null;
+      }
+      // Sucesso
+      if (attempt > 1) {
+        console.log(`[poster] evoFetch ${path} sucesso na tentativa ${attempt}`);
+      }
+      return json;
+    } catch (err) {
+      lastError = err.message;
+      if (attempt < maxRetries) {
+        const backoff = delayMs * Math.pow(2, attempt - 1);
+        console.log(`[poster] evoFetch ${path} tentativa ${attempt}/${maxRetries} erro (${err.message}), retry em ${backoff}ms`);
+        await sleep(backoff);
+        continue;
+      }
+      console.log(`[poster] evoFetch ${path} falhou (final): ${lastError}`);
       return null;
     }
-    return json;
-  } catch (err) {
-    console.log(`[poster] evoFetch ${path} falhou: ${err.message}`);
-    return null;
   }
+
+  return null;
 }
 
 /**
