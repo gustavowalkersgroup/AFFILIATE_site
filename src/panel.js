@@ -6,7 +6,7 @@
 import crypto from 'node:crypto';
 import { config } from './config.js';
 import { query, pool, getSetting, setSetting } from './db.js';
-import { statusData } from './control.js';
+import { statusData, listConversations, getConversationThread } from './control.js';
 import { postOffer, runChannelSeed, runSourcing } from './scheduler.js';
 import { importContacts, broadcastStats, sendTestInvite, normalizePhone } from './broadcast.js';
 import { warmerStats, blastWarmerTarget } from './warmer.js';
@@ -778,6 +778,16 @@ export function registerPanelRoutes(app, requireAdmin) {
          FROM contacts WHERE status = 'failed' GROUP BY reason ORDER BY n DESC`
     );
     res.json({ failures: rows });
+  }));
+
+  // Aba Conversas: DMs que a IA assume (aiReply) — somente leitura.
+  app.get('/api/conversations', requireAdmin, asyncRoute(async (req, res) => {
+    const status = ['optin', 'optout'].includes(req.query.status) ? req.query.status : undefined;
+    res.json({ conversations: await listConversations({ status }) });
+  }));
+
+  app.get('/api/conversations/:jid', requireAdmin, asyncRoute(async (req, res) => {
+    res.json(await getConversationThread(req.params.jid));
   }));
 
   // ------------------------------------------------------------------- config

@@ -348,6 +348,47 @@ async function findContactByJid(jid) {
   return rows[0] || null;
 }
 
+// Lista de conversas p/ aba Conversas (read-only): 1 linha por jid que já
+// trocou mensagem, com a última mensagem e o status opt-in/opt-out atual.
+export async function listConversations({ status } = {}) {
+  const clause = conversationStatusClause(status);
+  const { rows } = await query(
+    `SELECT jid, name, phone, status, last_text, last_at, total
+       FROM (
+         SELECT m.jid,
+                c.name,
+                c.phone,
+                COALESCE(c.status, 'pending') AS status,
+                m.text AS last_text,
+                m.created_at AS last_at,
+                count(*) OVER (PARTITION BY m.jid) AS total,
+                row_number() OVER (PARTITION BY m.jid ORDER BY m.created_at DESC) AS rn
+           FROM messages m
+           LEFT JOIN contacts c ON c.jid = m.jid
+       ) sub
+      WHERE rn = 1 AND ${clause}
+      ORDER BY last_at DESC`
+  );
+  return rows;
+}
+
+// Thread completa de uma conversa (aba Conversas, clique numa linha da lista).
+export async function getConversationThread(jid) {
+  const contact = await findContactByJid(jid);
+  const canonicalJid = contact ? contact.jid : jid;
+  const { rows } = await query(
+    `SELECT direction, text, created_at FROM messages WHERE jid = $1 ORDER BY created_at ASC`,
+    [canonicalJid]
+  );
+  return {
+    jid: canonicalJid,
+    name: contact ? contact.name : null,
+    phone: contact ? contact.phone : null,
+    status: contact ? contact.status : 'pending',
+    messages: rows,
+  };
+}
+
 // Envia DM por uma instância de DISPARO (conversa aberta). Prefere a instância
 // que originalmente falou com o contato (sent_instance). Retorna a instância ou null.
 async function dmViaBroadcast(jid, text, preferInstance) {
