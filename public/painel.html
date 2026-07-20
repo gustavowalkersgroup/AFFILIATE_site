@@ -340,6 +340,7 @@
       <button type="button" class="tab" data-tab="importar">Importar ML</button>
       <button type="button" class="tab" data-tab="disparos">Disparos</button>
       <button type="button" class="tab" data-tab="aquecedor">Aquecedor</button>
+      <button type="button" class="tab" data-tab="conversas">Conversas</button>
       <button type="button" class="tab" data-tab="config">Config</button>
     </nav>
   </header>
@@ -696,6 +697,26 @@
         </div>
       </div>
     </section>
+
+    <!-- CONVERSAS -->
+    <section id="tab-conversas" class="hidden">
+      <div class="warn" style="margin-bottom:12px;">
+        💬 <b>Conversas da IA.</b> Só visualização — mostra os DMs que a IA responde
+        automaticamente (não os disparos em massa, que ficam na aba Disparos).
+      </div>
+      <div class="toolbar">
+        <select id="cv-status" title="filtro de status">
+          <option value="" selected>Todos</option>
+          <option value="optin">Opt-in</option>
+          <option value="optout">Opt-out</option>
+        </select>
+      </div>
+      <div class="row2" style="align-items:start;">
+        <div id="cv-list"><p class="empty">carregando…</p></div>
+        <div class="card" id="cv-thread"><p class="empty">selecione uma conversa</p></div>
+      </div>
+    </section>
+
     <section id="tab-config" class="hidden">
 
       <!-- WhatsApp -->
@@ -1453,6 +1474,7 @@ $('#btn-refresh').addEventListener('click', function () {
   else if (activeTab === 'config') { jobs.push(loadConfig()); jobs.push(loadWaStatus()); jobs.push(loadInstagram()); }
   else if (activeTab === 'disparos') jobs.push(loadBroadcast());
   else if (activeTab === 'aquecedor') jobs.push(loadWarmer());
+  else if (activeTab === 'conversas') jobs.push(loadConversas());
   Promise.all(jobs).finally(function () { setLoading(btn, false); });
 });
 
@@ -1465,6 +1487,7 @@ function startAutoRefresh() {
     if (document.visibilityState === 'visible' && !loginVisible) {
       loadOverview(true);
       if (tick++ % 2 === 0) loadHealth(); /* saúde a cada 60s (1 chamada à Evolution) */
+      if (activeTab === 'conversas') loadConversas();
     }
   }, 30000);
 }
@@ -1506,6 +1529,7 @@ function loadTab(name) {
   else if (name === 'config') { loadConfig(); loadWaStatus(); loadInstagram(); loadWarmup(); }
   else if (name === 'disparos') loadBroadcast();
   else if (name === 'aquecedor') loadWarmer();
+  else if (name === 'conversas') loadConversas();
 }
 
 /* ============ Aquecimento (ramp-up) ============ */
@@ -3084,6 +3108,61 @@ $('#btn-wm-save').addEventListener('click', function () {
     instances: Array.prototype.slice.call(document.querySelectorAll('.wm-inst:checked')).map(function (el) { return el.value; })
   } }).then(loadWarmer).finally(function () { setLoading(btn, false); });
 });
+
+/* ============ Conversas (IA, só leitura) ============ */
+var cvSelectedJid = null;
+
+function loadConversas() {
+  var status = $('#cv-status').value;
+  var qs = status ? ('?status=' + encodeURIComponent(status)) : '';
+  return api('/api/conversations' + qs)
+    .then(function (data) { renderConversaList((data && data.conversations) || []); })
+    .catch(function () { $('#cv-list').innerHTML = '<p class="empty">erro ao carregar</p>'; });
+}
+
+function renderConversaList(list) {
+  if (!list.length) { $('#cv-list').innerHTML = '<p class="empty">nenhuma conversa ainda</p>'; return; }
+  $('#cv-list').innerHTML = list.map(function (c) {
+    var badge = c.status === 'optout'
+      ? '<span class="badge" style="color:var(--red); border-color:var(--red);">opt-out</span>'
+      : '<span class="badge" style="color:var(--green); border-color:var(--green);">opt-in</span>';
+    var label = c.name || c.phone || c.jid.split('@')[0];
+    var when = new Date(c.last_at).toLocaleString('pt-BR');
+    var active = c.jid === cvSelectedJid ? ' style="border-color:var(--blue);"' : '';
+    return '<div class="card" data-jid="' + esc(c.jid) + '"' + active + ' style="cursor:pointer; margin-bottom:8px;">' +
+      '<div style="display:flex; justify-content:space-between; gap:8px;">' +
+        '<b>' + esc(label) + '</b>' + badge +
+      '</div>' +
+      '<div class="muted" style="font-size:13px; margin-top:4px;">' + esc(c.last_text) + '</div>' +
+      '<div class="muted" style="font-size:11px; margin-top:4px;">' + esc(when) + ' · ' + c.total + ' msg(s)</div>' +
+    '</div>';
+  }).join('');
+  $all('#cv-list [data-jid]').forEach(function (el) {
+    el.addEventListener('click', function () { openConversa(el.dataset.jid); });
+  });
+}
+
+function openConversa(jid) {
+  cvSelectedJid = jid;
+  $('#cv-thread').innerHTML = '<p class="empty">carregando…</p>';
+  api('/api/conversations/' + encodeURIComponent(jid))
+    .then(function (t) {
+      var msgs = (t.messages || []).map(function (m) {
+        var mine = m.direction === 'out';
+        return '<div style="display:flex; justify-content:' + (mine ? 'flex-end' : 'flex-start') + '; margin-bottom:8px;">' +
+          '<div style="max-width:75%; padding:8px 12px; border-radius:10px; background:' + (mine ? 'var(--bg3)' : 'var(--bg2)') + '; border:1px solid var(--border);">' +
+            esc(m.text) +
+            '<div class="muted" style="font-size:10px; margin-top:4px;">' + new Date(m.created_at).toLocaleString('pt-BR') + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      $('#cv-thread').innerHTML = '<h2 style="margin-bottom:10px;">' + esc(t.name || t.phone || t.jid.split('@')[0]) + '</h2>' + (msgs || '<p class="empty">sem mensagens</p>');
+    })
+    .catch(function () { $('#cv-thread').innerHTML = '<p class="empty">erro ao carregar</p>'; });
+}
+
+$('#cv-status').addEventListener('change', loadConversas);
+
 function loadBroadcast() {
   return Promise.all([api('/api/broadcast'), api('/api/config')])
     .then(function (arr) {
