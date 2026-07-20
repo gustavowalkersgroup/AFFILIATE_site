@@ -28,6 +28,13 @@ function sweepReplyDedup() {
   }
 }
 
+async function recordMessage(jid, direction, text, instance) {
+  await query(
+    `INSERT INTO messages (jid, direction, text, instance) VALUES ($1, $2, $3, $4)`,
+    [jid, direction, text, instance]
+  );
+}
+
 const BOT_PATTERNS = [
   /mensagem autom[aá]tica/i,
   /atendimento autom[aá]tico/i,
@@ -48,7 +55,7 @@ function isBotMessage(text) {
   return BOT_PATTERNS.some(p => p.test(text));
 }
 
-async function aiReply(jid, text) {
+async function aiReply(jid, text, logJid) {
   const last = replyDedup.get(jid);
   if (last && Date.now() - last < REPLY_COOLDOWN_MS) return;
   sweepReplyDedup();
@@ -91,6 +98,7 @@ async function aiReply(jid, text) {
       options: { delay, presence: 'composing', linkPreview: false },
       textMessage: { text: reply },
     });
+    await recordMessage(logJid || jid, 'out', reply, config.broadcast.instance);
     replyDedup.set(jid, Date.now());
     console.log(`[ai-reply] respondido ${jid.split('@')[0]}`);
   } catch (err) {
@@ -269,8 +277,15 @@ export async function handleWebhook(payload) {
         }
 
         // AI auto-reply: DMs recebidos na instância de disparo (não opt-out, não bot).
+        // Grava em `messages` (aba Conversas) usando o jid CANÔNICO do contato
+        // (mesmo tratado no 9º dígito que findContactByJid já resolve pra
+        // opt-out/dmViaBroadcast) — sem isso, a mesma pessoa apareceria como
+        // duas conversas diferentes se mandar de variantes distintas do número.
         if (isBroadcast && !isBotMessage(text)) {
-          aiReply(jid, text).catch(() => {});
+          const contactForLog = await findContactByJid(jid);
+          const logJid = contactForLog ? contactForLog.jid : jid;
+          await recordMessage(logJid, 'in', text, instance);
+          aiReply(jid, text, logJid).catch(() => {});
         }
 
         // comandos do dono: só na instância principal e só do ownerJid.
