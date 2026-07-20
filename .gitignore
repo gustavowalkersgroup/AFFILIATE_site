@@ -5,3 +5,4 @@ node_modules/
 .remember/
 .claude/settings.local.json
 src/catalog.js.bak
+.superpowers/
