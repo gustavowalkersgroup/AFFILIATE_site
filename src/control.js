@@ -361,7 +361,7 @@ export async function listConversations({ status } = {}) {
                 COALESCE(c.status, 'pending') AS status,
                 m.text AS last_text,
                 m.created_at AS last_at,
-                count(*) OVER (PARTITION BY m.jid) AS total,
+                count(*) OVER (PARTITION BY m.jid)::int AS total,
                 row_number() OVER (PARTITION BY m.jid ORDER BY m.created_at DESC) AS rn
            FROM messages m
            LEFT JOIN contacts c ON c.jid = m.jid
