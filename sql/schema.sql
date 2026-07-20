@@ -191,3 +191,16 @@ CREATE INDEX IF NOT EXISTS idx_gef_pending ON group_exit_feedback (contact_jid)
 --  sent_instance → qual instância de disparo abriu a conversa (p/ DM sair por ela)
 ALTER TABLE contacts ADD COLUMN IF NOT EXISTS welcomed_at   TIMESTAMPTZ;
 ALTER TABLE contacts ADD COLUMN IF NOT EXISTS sent_instance TEXT;
+
+-- Conversas da IA (aba Conversas do painel): log de DMs recebidos e respondidos
+-- por aiReply (src/control.js). Retenção de 30 dias (purga automática, LGPD).
+CREATE TABLE IF NOT EXISTS messages (
+  id         BIGSERIAL PRIMARY KEY,
+  jid        TEXT NOT NULL,
+  direction  TEXT NOT NULL CHECK (direction IN ('in','out')),
+  text       TEXT NOT NULL,
+  instance   TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_messages_jid ON messages (jid, created_at);
+CREATE INDEX IF NOT EXISTS idx_messages_created ON messages (created_at);

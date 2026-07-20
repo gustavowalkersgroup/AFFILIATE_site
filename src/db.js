@@ -46,6 +46,15 @@ export async function isPaused() {
   return (await getSetting('paused', 'false')) === 'true';
 }
 
+// Purga LGPD: conteúdo de conversas da IA (aba Conversas) não fica indefinido.
+export async function purgeOldMessages(days = 30) {
+  const { rowCount } = await pool.query(
+    `DELETE FROM messages WHERE created_at < now() - make_interval(days => $1::int)`,
+    [days]
+  );
+  return rowCount;
+}
+
 // Executado direto: `npm run migrate` (node src/db.js --migrate). Confere o
 // ENTRYPOINT real (argv[1]), não só a presença da flag em algum lugar do argv —
 // senão um --migrate que chegue por qualquer outro motivo (wrapper, process
