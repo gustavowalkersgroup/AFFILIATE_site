@@ -6,6 +6,14 @@ import { pickNextOffer } from './ranking.js';
 import { notifyOwner, evoFetch } from './poster.js';
 import { isOptOut, markOptOut, broadcastInstances } from './broadcast.js';
 
+// Filtro de status pra listConversations (aba Conversas). 'status' aqui é a
+// coluna já normalizada (COALESCE(c.status, 'pending')) — optin = qualquer
+// coisa diferente de optout, não uma lista fixa de valores "bons".
+export function conversationStatusClause(filter) {
+  if (filter === 'optout') return "status = 'optout'";
+  if (filter === 'optin') return "status IS DISTINCT FROM 'optout'";
+  return '1=1';
+}
 
 // ── AI auto-reply p/ DMs recebidos na instância de disparo ───────────────────
 const replyDedup = new Map(); // jid → timestamp da última resposta
