@@ -6,6 +6,14 @@ import { pickNextOffer } from './ranking.js';
 import { notifyOwner, evoFetch } from './poster.js';
 import { isOptOut, markOptOut, broadcastInstances } from './broadcast.js';
 
+// Filtro de status pra listConversations (aba Conversas). 'status' aqui é a
+// coluna já normalizada (COALESCE(c.status, 'pending')) — optin = qualquer
+// coisa diferente de optout, não uma lista fixa de valores "bons".
+export function conversationStatusClause(filter) {
+  if (filter === 'optout') return "status = 'optout'";
+  if (filter === 'optin') return "status IS DISTINCT FROM 'optout'";
+  return '1=1';
+}
 
 // ── AI auto-reply p/ DMs recebidos na instância de disparo ───────────────────
 const replyDedup = new Map(); // jid → timestamp da última resposta
@@ -18,6 +26,13 @@ function sweepReplyDedup() {
   for (const [jid, ts] of replyDedup) {
     if (ts < cutoff) replyDedup.delete(jid);
   }
+}
+
+async function recordMessage(jid, direction, text, instance) {
+  await query(
+    `INSERT INTO messages (jid, direction, text, instance) VALUES ($1, $2, $3, $4)`,
+    [jid, direction, text, instance]
+  );
 }
 
 const BOT_PATTERNS = [
@@ -40,7 +55,7 @@ function isBotMessage(text) {
   return BOT_PATTERNS.some(p => p.test(text));
 }
 
-async function aiReply(jid, text) {
+async function aiReply(jid, text, logJid) {
   const last = replyDedup.get(jid);
   if (last && Date.now() - last < REPLY_COOLDOWN_MS) return;
   sweepReplyDedup();
@@ -83,6 +98,7 @@ async function aiReply(jid, text) {
       options: { delay, presence: 'composing', linkPreview: false },
       textMessage: { text: reply },
     });
+    await recordMessage(logJid || jid, 'out', reply, config.broadcast.instance);
     replyDedup.set(jid, Date.now());
     console.log(`[ai-reply] respondido ${jid.split('@')[0]}`);
   } catch (err) {
@@ -261,8 +277,15 @@ export async function handleWebhook(payload) {
         }
 
         // AI auto-reply: DMs recebidos na instância de disparo (não opt-out, não bot).
+        // Grava em `messages` (aba Conversas) usando o jid CANÔNICO do contato
+        // (mesmo tratado no 9º dígito que findContactByJid já resolve pra
+        // opt-out/dmViaBroadcast) — sem isso, a mesma pessoa apareceria como
+        // duas conversas diferentes se mandar de variantes distintas do número.
         if (isBroadcast && !isBotMessage(text)) {
-          aiReply(jid, text).catch(() => {});
+          const contactForLog = await findContactByJid(jid);
+          const logJid = contactForLog ? contactForLog.jid : jid;
+          await recordMessage(logJid, 'in', text, instance);
+          aiReply(jid, text, logJid).catch(() => {});
         }
 
         // comandos do dono: só na instância principal e só do ownerJid.
@@ -323,6 +346,47 @@ async function findContactByJid(jid) {
     [jids, variants]
   );
   return rows[0] || null;
+}
+
+// Lista de conversas p/ aba Conversas (read-only): 1 linha por jid que já
+// trocou mensagem, com a última mensagem e o status opt-in/opt-out atual.
+export async function listConversations({ status } = {}) {
+  const clause = conversationStatusClause(status);
+  const { rows } = await query(
+    `SELECT jid, name, phone, status, last_text, last_at, total
+       FROM (
+         SELECT m.jid,
+                c.name,
+                c.phone,
+                COALESCE(c.status, 'pending') AS status,
+                m.text AS last_text,
+                m.created_at AS last_at,
+                count(*) OVER (PARTITION BY m.jid)::int AS total,
+                row_number() OVER (PARTITION BY m.jid ORDER BY m.created_at DESC) AS rn
+           FROM messages m
+           LEFT JOIN contacts c ON c.jid = m.jid
+       ) sub
+      WHERE rn = 1 AND ${clause}
+      ORDER BY last_at DESC`
+  );
+  return rows;
+}
+
+// Thread completa de uma conversa (aba Conversas, clique numa linha da lista).
+export async function getConversationThread(jid) {
+  const contact = await findContactByJid(jid);
+  const canonicalJid = contact ? contact.jid : jid;
+  const { rows } = await query(
+    `SELECT direction, text, created_at FROM messages WHERE jid = $1 ORDER BY created_at ASC`,
+    [canonicalJid]
+  );
+  return {
+    jid: canonicalJid,
+    name: contact ? contact.name : null,
+    phone: contact ? contact.phone : null,
+    status: contact ? contact.status : 'pending',
+    messages: rows,
+  };
 }
 
 // Envia DM por uma instância de DISPARO (conversa aberta). Prefere a instância

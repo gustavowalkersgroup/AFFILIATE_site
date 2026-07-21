@@ -5,7 +5,7 @@
 // 4. Resumo diário às 22:30 para o dono
 import cron from 'node-cron';
 import { config, randomBetween } from './config.js';
-import { query, getSetting, setSetting, isPaused } from './db.js';
+import { query, getSetting, setSetting, isPaused, purgeOldMessages } from './db.js';
 import { searchOffers } from './shopee.js';
 import { upsertOffer, pickNextOfferByMix, expireOldOffers } from './ranking.js';
 import { generateCopy } from './copy.js';
@@ -543,6 +543,12 @@ export function startScheduler() {
   // 6. healthcheck do Telegram a cada 10min: detecta sessão revogada DEPOIS do
   //    boot (isMonitorRunning() sozinho não pegaria isso) e avisa o dono.
   cron.schedule('*/10 * * * *', () => { checkTelegramHealth(); }, opts);
+  // 7. purga diária de mensagens da IA (aba Conversas) com mais de 30 dias — LGPD.
+  cron.schedule('15 3 * * *', () => {
+    purgeOldMessages(30)
+      .then((n) => { if (n > 0) console.log(`[scheduler] purga de mensagens: ${n} registro(s) com mais de 30 dias removido(s)`); })
+      .catch((err) => console.log(`[scheduler] erro na purga de mensagens: ${err.message}`));
+  }, opts);
 
   // boot: sourcing em ~30s; plano do dia se ainda não existir
   setTimeout(() => { runSourcing(); }, 30_000);
