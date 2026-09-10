@@ -178,6 +178,7 @@ export const config = {
   tryon: {
     enabled: process.env.TRYON_ENABLED !== 'false', // default ligado
     model: process.env.TRYON_MODEL || 'gpt-image-1',
+    quality: process.env.TRYON_QUALITY || 'medium',
     timeoutMs: Number(process.env.TRYON_TIMEOUT_MS || 55000),
     avatarPath: process.env.TRYON_AVATAR_PATH || 'assets/avatar-base.png',
   },

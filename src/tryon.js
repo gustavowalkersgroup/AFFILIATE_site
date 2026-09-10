@@ -94,7 +94,7 @@ export async function generateTryOnImage(offer) {
     form.append('model', config.tryon.model);
     form.append('prompt', buildPrompt(offer));
     form.append('size', '1024x1536');
-    form.append('quality', 'high');
+    form.append('quality', config.tryon.quality);
     form.append('image[]', new Blob([avatar], { type: 'image/png' }), 'avatar.png');
     form.append('image[]', new Blob([productBuffer], { type: productType }), 'produto.jpg');
 
