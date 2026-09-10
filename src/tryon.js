@@ -8,16 +8,29 @@ import { readFileSync } from 'node:fs';
 import { config } from './config.js';
 import { isMasculineTitle } from './ranking.js';
 
-let avatarBuffer = null;
-function loadAvatar() {
-  if (avatarBuffer) return avatarBuffer;
+const avatarCache = new Map();
+function loadAvatar(path) {
+  if (avatarCache.has(path)) return avatarCache.get(path);
   try {
-    avatarBuffer = readFileSync(config.tryon.avatarPath);
-    return avatarBuffer;
+    const buf = readFileSync(path);
+    avatarCache.set(path, buf);
+    return buf;
   } catch (err) {
-    console.log(`[tryon] avatar-base não encontrado em ${config.tryon.avatarPath}: ${err.message}`);
+    console.log(`[tryon] avatar não encontrado em ${path}: ${err.message}`);
+    avatarCache.set(path, null);
     return null;
   }
+}
+
+// Fotos extras da mesma modelo (poses/ângulos diferentes) — sorteia 1 por
+// chamada além do avatar-base, em vez de mandar todas sempre (cada imagem a
+// mais soma tempo/custo no request; 1 extra já ajuda a fixar identidade sem
+// piorar o timeout). Só se aplica ao avatar feminino (padrão do sistema).
+function pickAvatarRef() {
+  const paths = config.tryon.avatarRefPaths;
+  if (!paths.length) return null;
+  const path = paths[Math.floor(Math.random() * paths.length)];
+  return loadAvatar(path);
 }
 
 // Cenário + pose sorteados por chamada — evita feed repetitivo. Sempre reforça
@@ -46,43 +59,59 @@ function randomPick(arr) {
 // Calçado é geometricamente difícil pro modelo calçar corretamente (pé+perna+sapato
 // exige mais precisão espacial que vestir tronco) — em vez de forçar uma única ação
 // que o modelo tende a ignorar, sorteia entre variações válidas de divulgação.
-const ACOES_CALCADOS = [
-  'CALCE a peça nos pés da modelo, os dois pés visíveis, calçado corretamente',
-  'a modelo segurando o calçado na mão, mostrando bem os detalhes, como em foto de divulgação',
-  'o calçado em exibição numa prateleira ou superfície ao lado da modelo, ela por perto olhando ou apontando pra ele',
-];
+function acoesCalcados(pessoa, pronome) {
+  return [
+    `CALCE a peça nos pés d${pronome} ${pessoa}, os dois pés visíveis, calçado corretamente`,
+    `${pessoa} segurando o calçado na mão, mostrando bem os detalhes, como em foto de divulgação`,
+    `o calçado em exibição numa prateleira ou superfície ao lado d${pronome} ${pessoa}, ele(a) por perto olhando ou apontando pra ele`,
+  ];
+}
 
 // Como aplicar o produto no corpo, por categoria — evita o modelo "escolher"
 // (ex.: segurar uma regata na mão em vez de vestir).
-function acaoPorCategoria(category) {
+function acaoPorCategoria(category, isMale) {
+  const pessoa = isMale ? 'o modelo' : 'a modelo';
+  const pronome = isMale ? 'o' : 'a';
   switch (category) {
     case 'roupas':
-      return 'VISTA a peça no corpo da modelo (nunca segure na mão — é roupa, deve estar vestida)';
+      return `VISTA a peça no corpo d${pronome} ${pessoa} (nunca segure na mão — é roupa, deve estar vestida)`;
     case 'calcados':
-      return randomPick(ACOES_CALCADOS);
+      return randomPick(acoesCalcados(pessoa, pronome));
     default:
-      return 'segure o produto na mão, visível e em destaque, como em foto de divulgação';
+      return `${pessoa} segurando o produto na mão, visível e em destaque, como em foto de divulgação`;
   }
 }
 
-function buildPrompt(offer) {
+function buildPrompt(offer, { isMale = false, hasExtraRef = false } = {}) {
   const cenario = randomPick(CENARIOS);
   const pose = randomPick(POSES);
-  const acao = acaoPorCategoria(offer.category);
+  const acao = acaoPorCategoria(offer.category, isMale);
+  const pessoa = isMale ? 'o modelo' : 'a modelo';
+  const biotipo = isMale
+    ? `Preserve também EXATAMENTE o físico dele: mesmo porte, definição muscular e postura da imagem 1.`
+    : `Preserve também EXATAMENTE o tipo de corpo dela: mesmo biotipo, mesma quantidade de curvas, ` +
+      `mesma largura de quadril/coxa/braço — ela é uma mulher de corpo cheio/curvy, NÃO a deixe mais ` +
+      `magra, mais fina ou com corpo diferente.`;
+  const lembreteBiotipo = isMale
+    ? 'mesmo físico e postura, sem alterar o porte dele'
+    : 'mesmo biotipo curvy, sem emagrecer nem afinar a modelo';
+  const indiceProduto = hasExtraRef ? 'imagem 3' : 'imagem 2';
+  const refExtra = hasExtraRef
+    ? `Imagens 1 e 2 mostram a MESMA pessoa em ângulos/poses diferentes — use as duas juntas ` +
+      `pra entender melhor a aparência real d${isMale ? 'ele' : 'ela'} (rosto, corpo, proporções). `
+    : '';
   return (
     `CRÍTICO — preserve EXATAMENTE o rosto, feições, formato do nariz/boca/olhos, cor de ` +
-    `pele e cabelo da modelo da imagem 1. Preserve também EXATAMENTE o tipo de corpo dela: ` +
-    `mesmo biotipo, mesma quantidade de curvas, mesma largura de quadril/coxa/braço — ela é ` +
-    `uma mulher de corpo cheio/curvy, NÃO a deixe mais magra, mais fina ou com corpo diferente. ` +
-    `Não altere a identidade nem o biotipo dela de forma alguma. ` +
-    `Imagem 2 é o produto real: mantenha fielmente a cor, estampa, textura e formato exatos ` +
+    `pele e cabelo d${isMale ? 'o' : 'a'} ${pessoa} da(s) imagem(ns) de referência. ${refExtra}${biotipo} ` +
+    `Não altere a identidade nem o biotipo d${isMale ? 'ele' : 'ela'} de forma alguma. ` +
+    `A ${indiceProduto} é o produto real: mantenha fielmente a cor, estampa, textura e formato exatos ` +
     `— não invente nem distorça texto/logo do produto; se não conseguir reproduzir o texto ` +
     `com nitidez, prefira simplificar a estampa a gerar texto ilegível. ` +
     `Ação obrigatória: ${acao}. ` +
     `Produto: "${offer.title || 'produto'}". Cenário: ${cenario}. Pose: ${pose}. ` +
     `Foto realista, estilo comercial, iluminação natural. ` +
-    `Lembrete final: rosto E corpo da imagem 1 devem ficar IDÊNTICOS no resultado — mesmo ` +
-    `biotipo curvy, sem emagrecer nem afinar a modelo.`
+    `Lembrete final: rosto E corpo d${isMale ? 'o modelo' : 'a modelo'} devem ficar IDÊNTICOS ao das ` +
+    `imagens de referência — ${lembreteBiotipo}.`
   );
 }
 
@@ -97,15 +126,24 @@ export async function generateTryOnImage(offer) {
     return null;
   }
   if (!offer.image_url) return null;
-  // Avatar é feminino — produto explicitamente masculino não deve ser "vestido"
-  // nela. Cai na foto original do produto.
-  if (isMasculineTitle(offer.title)) {
-    console.log(`[tryon] produto masculino (#${offer.id}) — pulando, usando foto original`);
+
+  // Avatar padrão é feminino. Produto masculino: só faz sentido usar o avatar
+  // homem quando dá pra vestir/calçar de verdade (roupa ou calçado). Fora
+  // isso (ex.: segurar um item na mão), gênero do avatar é irrelevante e o
+  // padrão do sistema (pular, cair na foto original) evita risco à toa.
+  const masculino = isMasculineTitle(offer.title);
+  const usaAvatarMasculino = masculino && ['roupas', 'calcados'].includes(offer.category);
+  if (masculino && !usaAvatarMasculino) {
+    console.log(`[tryon] produto masculino (#${offer.id}, categoria ${offer.category}) — pulando, usando foto original`);
     return null;
   }
 
-  const avatar = loadAvatar();
+  const avatarPath = usaAvatarMasculino ? config.tryon.avatarPathMasculino : config.tryon.avatarPath;
+  const avatar = loadAvatar(avatarPath);
   if (!avatar) return null;
+  // Ref extra (pose/ângulo diferente da mesma pessoa) só existe pro avatar
+  // feminino por enquanto — melhora fidelidade sem inflar toda chamada.
+  const avatarRef = usaAvatarMasculino ? null : pickAvatarRef();
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), config.tryon.timeoutMs);
@@ -124,10 +162,13 @@ export async function generateTryOnImage(offer) {
 
     const form = new FormData();
     form.append('model', config.tryon.model);
-    form.append('prompt', buildPrompt(offer));
+    form.append('prompt', buildPrompt(offer, { isMale: usaAvatarMasculino, hasExtraRef: !!avatarRef }));
     form.append('size', '1024x1536');
     form.append('quality', config.tryon.quality);
     form.append('image[]', new Blob([avatar], { type: 'image/png' }), 'avatar.png');
+    if (avatarRef) {
+      form.append('image[]', new Blob([avatarRef], { type: 'image/png' }), 'avatar-ref.png');
+    }
     form.append('image[]', new Blob([productBuffer], { type: productType }), 'produto.jpg');
 
     const res = await fetch('https://api.openai.com/v1/images/edits', {

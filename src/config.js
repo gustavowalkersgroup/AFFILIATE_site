@@ -181,6 +181,13 @@ export const config = {
     quality: process.env.TRYON_QUALITY || 'medium',
     timeoutMs: Number(process.env.TRYON_TIMEOUT_MS || 55000),
     avatarPath: process.env.TRYON_AVATAR_PATH || 'assets/avatar-base.png',
+    avatarPathMasculino: process.env.TRYON_AVATAR_PATH_MASCULINO || 'assets/avatar-base-masculino.png',
+    // Fotos extras da mesma modelo (poses/ângulos diferentes) — sorteia 1 por
+    // chamada além do avatar-base, melhora fidelidade sem inflar cada request.
+    avatarRefPaths: (process.env.TRYON_AVATAR_REF_PATHS || 'assets/avatar-refs/ref1-frontal.png,assets/avatar-refs/ref2-correndo.png,assets/avatar-refs/ref3-costas.png,assets/avatar-refs/ref4-yoga.png')
+      .split(',')
+      .map((p) => p.trim())
+      .filter(Boolean),
   },
 
   port: Number(process.env.PORT || 3210),
