@@ -90,11 +90,12 @@ function buildPrompt(offer, { isMale = false, hasExtraRef = false } = {}) {
   const biotipo = isMale
     ? `Preserve também EXATAMENTE o físico dele: mesmo porte, definição muscular e postura da imagem 1.`
     : `Preserve também EXATAMENTE o tipo de corpo dela: mesmo biotipo, mesma quantidade de curvas, ` +
-      `mesma largura de quadril/coxa/braço — ela é uma mulher de corpo cheio/curvy, NÃO a deixe mais ` +
-      `magra, mais fina ou com corpo diferente.`;
+      `mesma largura de quadril/coxa/braço — ela é uma mulher curvy e ATLÉTICA, corpo de academia/fitness, ` +
+      `tonificada, NÃO obesa, NÃO com sobrepeso genérico, e também NÃO mais magra ou mais fina do que ` +
+      `nas imagens de referência.`;
   const lembreteBiotipo = isMale
     ? 'mesmo físico e postura, sem alterar o porte dele'
-    : 'mesmo biotipo curvy, sem emagrecer nem afinar a modelo';
+    : 'mesmo biotipo curvy e atlético (fitness, tonificada), sem emagrecer nem engordar a modelo';
   const indiceProduto = hasExtraRef ? 'imagem 3' : 'imagem 2';
   const refExtra = hasExtraRef
     ? `Imagens 1 e 2 mostram a MESMA pessoa em ângulos/poses diferentes — use as duas juntas ` +
@@ -102,7 +103,10 @@ function buildPrompt(offer, { isMale = false, hasExtraRef = false } = {}) {
     : '';
   return (
     `CRÍTICO — preserve EXATAMENTE o rosto, feições, formato do nariz/boca/olhos, cor de ` +
-    `pele e cabelo d${isMale ? 'o' : 'a'} ${pessoa} da(s) imagem(ns) de referência. ${refExtra}${biotipo} ` +
+    `pele e cabelo d${isMale ? 'o' : 'a'} ${pessoa} da(s) imagem(ns) de referência. Atenção especial ` +
+    `aos olhos: mantenha os dois olhos simétricos, abertos igualmente, olhando na mesma direção ` +
+    `reta pra câmera — nunca gere olhar torto, vesgo, desalinhado ou com um olho mais fechado/virado ` +
+    `que o outro. ${refExtra}${biotipo} ` +
     `Não altere a identidade nem o biotipo d${isMale ? 'ele' : 'ela'} de forma alguma. ` +
     `A ${indiceProduto} é o produto real: mantenha fielmente a cor, estampa, textura e formato exatos ` +
     `— não invente nem distorça texto/logo do produto; se não conseguir reproduzir o texto ` +
