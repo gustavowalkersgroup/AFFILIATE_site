@@ -16,6 +16,14 @@ function fold(s) {
     .replace(/[̀-ͯ]/g, '');
 }
 
+// Título indica produto explicitamente masculino (penaliza score em scoreOffer;
+// reusado em tryon.js pra pular virtual try-on — avatar é feminino).
+export function isMasculineTitle(title) {
+  return /masculino|masculina|masc|bermuda masculin|short(?:s)? de futebol|chuteira|meiao de futebol|camisa de time|camisa selecao/.test(
+    fold(title)
+  );
+}
+
 // Categoria (keyword) → bucket de mix. Football/Copa usa as categorias
 // roupas/calcados, caindo em 'vestuario'. Null/desconhecida → 'acessorios'.
 const CATEGORY_BUCKET = {
@@ -100,7 +108,7 @@ export function scoreOffer(o) {
   // Multiplicador de gênero: público-alvo feminino.
   // Explicitamente masculino → penaliza forte. Explicitamente feminino → bônus leve.
   const titleLow = fold(o.title);
-  const isMasculine = /masculino|masculina|masc|bermuda masculin|short(?:s)? de futebol|chuteira|meiao de futebol|camisa de time|camisa selecao/.test(titleLow);
+  const isMasculine = isMasculineTitle(o.title);
   const isFeminine  = /feminino|feminina|fem|mulher|her|cropped|legging|sutia|sutia/.test(titleLow);
   const genderMult  = isMasculine ? 0.25 : (isFeminine ? 1.08 : 1.0);
 

@@ -1,10 +1,11 @@
-// Cliente Evolution API v1.8.6 — formato v1 (wrappers textMessage/mediaMessage).
+// Cliente Evolution API v2.x — payloads flat (number/text, number/mediatype).
 // Erros de rede NUNCA derrubam o processo: tudo capturado, logado e retorna neutro.
 import { config, randomBetween } from './config.js';
 import { query, getSetting, setSetting } from './db.js';
 import { generateShortLink } from './shopee.js';
 import { assembleMessage } from './copy.js';
 import { bucketOf } from './ranking.js';
+import { generateTryOnImage } from './tryon.js';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -72,35 +73,27 @@ export async function evoFetch(path, body, { maxRetries = 3, delayMs = 1000 } = 
 }
 
 /**
- * Envia texto (formato v1: wrapper textMessage).
+ * Envia texto (formato v2: payload flat).
  */
 export async function sendText(jid, text, { delay } = {}) {
   return evoFetch(`/message/sendText/${config.evolution.instance}`, {
     number: jid,
-    options: {
-      delay: delay ?? randomBetween(config.posting.sendDelayMs),
-      presence: 'composing',
-      linkPreview: true,
-    },
-    textMessage: { text },
+    text,
+    delay: delay ?? randomBetween(config.posting.sendDelayMs),
+    linkPreview: true,
   });
 }
 
 /**
- * Envia imagem com legenda (formato v1: wrapper mediaMessage).
+ * Envia imagem com legenda (formato v2: payload flat).
  */
 export async function sendImage(jid, imageUrl, caption) {
   return evoFetch(`/message/sendMedia/${config.evolution.instance}`, {
     number: jid,
-    options: {
-      delay: randomBetween(config.posting.sendDelayMs),
-      presence: 'composing',
-    },
-    mediaMessage: {
-      mediatype: 'image',
-      media: imageUrl,
-      caption,
-    },
+    mediatype: 'image',
+    media: imageUrl,
+    caption,
+    delay: randomBetween(config.posting.sendDelayMs),
   });
 }
 
@@ -129,6 +122,17 @@ export async function postOfferToGroups(offer, hook) {
   let sent = 0;
   let failed = 0;
 
+  // Try-on gerado 1x por oferta (não por grupo) — mesma imagem pra todos os
+  // grupos deste post. Falha/timeout → cai em offer.image_url (nunca bloqueia).
+  let imageToSend = offer.image_url;
+  if (offer.image_url) {
+    const tryonB64 = await generateTryOnImage(offer);
+    if (tryonB64) {
+      imageToSend = tryonB64;
+      console.log(`[poster] try-on gerado p/ oferta #${offer.id}`);
+    }
+  }
+
   for (let i = 0; i < groups.length; i++) {
     const group = groups[i];
     let ok = false;
@@ -156,8 +160,8 @@ export async function postOfferToGroups(offer, hook) {
     const message = assembleMessage({ ...offer, affiliate_url: trackedUrl }, hook);
 
     try {
-      const result = offer.image_url
-        ? await sendImage(group.jid, offer.image_url, message)
+      const result = imageToSend
+        ? await sendImage(group.jid, imageToSend, message)
         : await sendText(group.jid, message);
       ok = result !== null;
       if (!ok) error = 'envio falhou (resposta nula da Evolution)';

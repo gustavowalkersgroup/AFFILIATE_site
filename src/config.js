@@ -172,6 +172,16 @@ export const config = {
     },
   },
 
+  // Virtual try-on: veste o avatar-base com a foto do produto via gpt-image-1
+  // (reusa config.copy.openai.apiKey). Síncrono no envio, timeout curto + fallback
+  // pra offer.image_url original em qualquer falha — nunca trava a fila de posts.
+  tryon: {
+    enabled: process.env.TRYON_ENABLED !== 'false', // default ligado
+    model: process.env.TRYON_MODEL || 'gpt-image-1',
+    timeoutMs: Number(process.env.TRYON_TIMEOUT_MS || 55000),
+    avatarPath: process.env.TRYON_AVATAR_PATH || 'assets/avatar-base.png',
+  },
+
   port: Number(process.env.PORT || 3210),
   adminToken: process.env.ADMIN_TOKEN || '',
   // Token do MCP (rota /mcp). Default = ADMIN_TOKEN. Vazio = rota liberada (LAN).
