@@ -43,6 +43,15 @@ function randomPick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+// Calçado é geometricamente difícil pro modelo calçar corretamente (pé+perna+sapato
+// exige mais precisão espacial que vestir tronco) — em vez de forçar uma única ação
+// que o modelo tende a ignorar, sorteia entre variações válidas de divulgação.
+const ACOES_CALCADOS = [
+  'CALCE a peça nos pés da modelo, os dois pés visíveis, calçado corretamente',
+  'a modelo segurando o calçado na mão, mostrando bem os detalhes, como em foto de divulgação',
+  'o calçado em exibição numa prateleira ou superfície ao lado da modelo, ela por perto olhando ou apontando pra ele',
+];
+
 // Como aplicar o produto no corpo, por categoria — evita o modelo "escolher"
 // (ex.: segurar uma regata na mão em vez de vestir).
 function acaoPorCategoria(category) {
@@ -50,7 +59,7 @@ function acaoPorCategoria(category) {
     case 'roupas':
       return 'VISTA a peça no corpo da modelo (nunca segure na mão — é roupa, deve estar vestida)';
     case 'calcados':
-      return 'CALCE a peça nos pés da modelo (nunca segure na mão — é calçado, deve estar calçado)';
+      return randomPick(ACOES_CALCADOS);
     default:
       return 'segure o produto na mão, visível e em destaque, como em foto de divulgação';
   }
@@ -62,14 +71,18 @@ function buildPrompt(offer) {
   const acao = acaoPorCategoria(offer.category);
   return (
     `CRÍTICO — preserve EXATAMENTE o rosto, feições, formato do nariz/boca/olhos, cor de ` +
-    `pele e cabelo da modelo da imagem 1. Não altere a identidade dela de forma alguma. ` +
+    `pele e cabelo da modelo da imagem 1. Preserve também EXATAMENTE o tipo de corpo dela: ` +
+    `mesmo biotipo, mesma quantidade de curvas, mesma largura de quadril/coxa/braço — ela é ` +
+    `uma mulher de corpo cheio/curvy, NÃO a deixe mais magra, mais fina ou com corpo diferente. ` +
+    `Não altere a identidade nem o biotipo dela de forma alguma. ` +
     `Imagem 2 é o produto real: mantenha fielmente a cor, estampa, textura e formato exatos ` +
     `— não invente nem distorça texto/logo do produto; se não conseguir reproduzir o texto ` +
     `com nitidez, prefira simplificar a estampa a gerar texto ilegível. ` +
     `Ação obrigatória: ${acao}. ` +
     `Produto: "${offer.title || 'produto'}". Cenário: ${cenario}. Pose: ${pose}. ` +
     `Foto realista, estilo comercial, iluminação natural. ` +
-    `Lembrete final: rosto da imagem 1 deve ficar IDÊNTICO no resultado.`
+    `Lembrete final: rosto E corpo da imagem 1 devem ficar IDÊNTICOS no resultado — mesmo ` +
+    `biotipo curvy, sem emagrecer nem afinar a modelo.`
   );
 }
 
@@ -104,7 +117,10 @@ export async function generateTryOnImage(offer) {
       return null;
     }
     const productBuffer = Buffer.from(await productRes.arrayBuffer());
-    const productType = productRes.headers.get('content-type') || 'image/jpeg';
+    // OpenAI só aceita mimetype puro (sem "; charset=..." etc) — alguns CDNs (Shopee)
+    // mandam esse parâmetro extra, que a API rejeita com HTTP 400.
+    const rawType = (productRes.headers.get('content-type') || 'image/jpeg').split(';')[0].trim();
+    const productType = ['image/jpeg', 'image/png', 'image/webp'].includes(rawType) ? rawType : 'image/jpeg';
 
     const form = new FormData();
     form.append('model', config.tryon.model);
