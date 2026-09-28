@@ -867,6 +867,17 @@
         <p class="cfg-note" id="ali-test-result"></p>
       </div>
 
+      <!-- Try-on (foto do produto vestida no avatar via IA) -->
+      <div class="card form">
+        <h2>🪄 Try-on por IA</h2>
+        <p class="cfg-note">Gera a foto do produto "vestido" no avatar antes de postar. Desligado, usa a foto original do produto.</p>
+        <label class="chkline">
+          <input type="checkbox" id="tryon-enabled">
+          <span>Ativar geração de imagem via IA</span>
+        </label>
+        <button id="btn-tryon-save" class="btn btn-primary" type="button">Salvar</button>
+      </div>
+
       <!-- Instagram (auto-post das ofertas) -->
       <div class="card form">
         <h2>📸 Instagram (auto-post das ofertas)</h2>
@@ -2205,6 +2216,8 @@ function fillConfigForms() {
     hint.classList.add('hidden');
   }
 
+  $('#tryon-enabled').checked = !!(cfg.tryon || {}).enabled;
+
   var ml = cfg.meli || {};
   $('#meli-word').value = ml.mattWord || '';
   $('#meli-tool').value = ml.mattTool || '';
@@ -2552,6 +2565,11 @@ $('#btn-meli-testlink').addEventListener('click', function () {
   api('/api/config/meli/test-link', { method: 'POST', body: { url: url }, timeoutMs: 30000 })
     .then(function (r) { msg.textContent = r.ok ? ('✅ ' + r.link) : ('❌ ' + (r.error || 'falhou')); })
     .catch(function (e) { msg.textContent = '❌ ' + (e.message || 'erro'); });
+});
+
+/* ============ CONFIG: Try-on ============ */
+$('#btn-tryon-save').addEventListener('click', function () {
+  saveConfig({ tryon: { enabled: $('#tryon-enabled').checked } }, $('#btn-tryon-save'));
 });
 
 /* ============ CONFIG: Amazon ============ */

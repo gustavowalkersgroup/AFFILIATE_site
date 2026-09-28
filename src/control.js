@@ -55,7 +55,7 @@ function isBotMessage(text) {
   return BOT_PATTERNS.some(p => p.test(text));
 }
 
-async function aiReply(jid, text, logJid) {
+async function aiReply(jid, text, logJid, instance) {
   const last = replyDedup.get(jid);
   if (last && Date.now() - last < REPLY_COOLDOWN_MS) return;
   sweepReplyDedup();
@@ -93,12 +93,13 @@ async function aiReply(jid, text, logJid) {
     if (!reply) return;
 
     const delay = 3000 + Math.floor(Math.random() * 4000);
-    await evoFetch(`/message/sendText/${config.broadcast.instance}`, {
+    await evoFetch(`/message/sendText/${instance}`, {
       number: jid,
-      options: { delay, presence: 'composing', linkPreview: false },
-      textMessage: { text: reply },
+      text: reply,
+      delay,
+      linkPreview: false,
     });
-    await recordMessage(logJid || jid, 'out', reply, config.broadcast.instance);
+    await recordMessage(logJid || jid, 'out', reply, instance);
     replyDedup.set(jid, Date.now());
     console.log(`[ai-reply] respondido ${jid.split('@')[0]}`);
   } catch (err) {
@@ -239,7 +240,7 @@ export async function handleWebhook(payload) {
 
     const instance = payload?.instance;
     const isMain = instance === config.evolution.instance;
-    const isBroadcast = config.broadcast.instance && instance === config.broadcast.instance;
+    const isBroadcast = broadcastInstances().includes(instance);
     if (!isMain && !isBroadcast) {
       console.log(`[control] webhook ignorado: instância "${instance}" não é nossa nem a de disparo`);
       return { ok: true, ignored: 'instance' };
@@ -253,6 +254,7 @@ export async function handleWebhook(payload) {
       try {
         const jid = msg?.key?.remoteJid;
         if (!jid) continue;
+        if (String(jid).endsWith('@lid')) console.log(`[lid-diag] key=${JSON.stringify(msg.key)}`);
         if (msg?.key?.fromMe) continue;             // ignora o que nós enviamos
         if (String(jid).endsWith('@g.us')) continue; // ignora grupos
         const text = messageText(msg);
@@ -285,7 +287,7 @@ export async function handleWebhook(payload) {
           const contactForLog = await findContactByJid(jid);
           const logJid = contactForLog ? contactForLog.jid : jid;
           await recordMessage(logJid, 'in', text, instance);
-          aiReply(jid, text, logJid).catch(() => {});
+          aiReply(jid, text, logJid, instance).catch(() => {});
         }
 
         // comandos do dono: só na instância principal e só do ownerJid.
@@ -400,8 +402,9 @@ async function dmViaBroadcast(jid, text, preferInstance) {
   for (const inst of ordered) {
     const r = await evoFetch(`/message/sendText/${inst}`, {
       number: jid,
-      options: { delay: 2500 + Math.floor(Math.random() * 3000), presence: 'composing', linkPreview: false },
-      textMessage: { text },
+      text,
+      delay: 2500 + Math.floor(Math.random() * 3000),
+      linkPreview: false,
     });
     if (r !== null) return inst;
   }

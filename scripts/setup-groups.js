@@ -82,6 +82,7 @@ async function ensureInstance() {
       instanceName: instance,
       token,
       qrcode: true,
+      integration: 'WHATSAPP-BAILEYS',
     });
     if (!created) {
       console.log('[setup-groups] falha ao criar a instância — verifique EVOLUTION_URL/EVOLUTION_APIKEY.');
@@ -153,13 +154,16 @@ async function setupWebhook() {
   const path = '/webhook/evolution' + (config.webhookToken ? '/' + config.webhookToken : '');
   const url = 'http://10.0.0.254:' + config.port + path;
   const res = await evo('POST', '/webhook/set/' + instance, {
-    url,
-    enabled: true,
-    webhook_by_events: false,
-    webhook_base64: false,
-    events: ['MESSAGES_UPSERT', 'GROUP_PARTICIPANTS_UPDATE'],
+    webhook: {
+      url,
+      enabled: true,
+      byEvents: false,
+      base64: false,
+      events: ['MESSAGES_UPSERT', 'GROUP_PARTICIPANTS_UPDATE'],
+    },
   });
-  console.log('[setup-groups] webhook ' + (res ? 'configurado' : 'FALHOU') + ': ' + url);
+  // NUNCA loga a URL completa — o path carrega o WEBHOOK_TOKEN (segredo).
+  console.log('[setup-groups] webhook ' + (res ? 'configurado' : 'FALHOU') + ' (instância ' + instance + ')');
 }
 
 async function main() {

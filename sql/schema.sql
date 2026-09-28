@@ -56,6 +56,17 @@ ALTER TABLE offers ADD COLUMN IF NOT EXISTS ig_attempts  INTEGER NOT NULL DEFAUL
 CREATE INDEX IF NOT EXISTS idx_offers_ig_pending ON offers (score DESC)
   WHERE ig_status IS NULL;
 
+-- Facebook: espelho do Instagram. fb_status NULL = nunca tentou, 'posting' = lock
+-- reivindicado, 'posted' = sucesso, 'error' = falhou; dedup via fb_posted_at IS NULL.
+ALTER TABLE offers ADD COLUMN IF NOT EXISTS fb_status text;
+ALTER TABLE offers ADD COLUMN IF NOT EXISTS fb_attempts integer NOT NULL DEFAULT 0;
+ALTER TABLE offers ADD COLUMN IF NOT EXISTS fb_post_id text;
+ALTER TABLE offers ADD COLUMN IF NOT EXISTS fb_posted_at timestamptz;
+ALTER TABLE offers ADD COLUMN IF NOT EXISTS fb_error text;
+
+CREATE INDEX IF NOT EXISTS idx_offers_fb_pending ON offers (score DESC)
+  WHERE fb_status IS NULL;
+
 CREATE TABLE IF NOT EXISTS posts (
   id          BIGSERIAL PRIMARY KEY,
   offer_id    BIGINT NOT NULL REFERENCES offers(id),

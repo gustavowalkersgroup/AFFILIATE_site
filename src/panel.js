@@ -26,6 +26,7 @@ import {
 } from './telegram.js';
 import { saveOverrides, maskedConfig } from './settings-store.js';
 import { testToken as igTestToken, saveTokenManual as igSaveToken, disconnectInstagram, buildAuthorizeUrl as igAuthorizeUrl, igStatus, postOfferNow as igPostOfferNow, runInstagramExecutor } from './instagram.js';
+import { fbStatus, runFacebookExecutor, postOfferNow as fbPostOfferNow } from './facebook.js';
 import { searchOffers } from './shopee.js';
 import {
   expandUrl,
@@ -91,9 +92,13 @@ async function evoInstanceInfo() {
   }
   const arr = Array.isArray(list) ? list : [list];
   const item = arr.find(
-    (it) => (it.instance?.instanceName ?? it.instanceName) === config.evolution.instance
+    (it) => (it.name ?? it.instance?.instanceName ?? it.instanceName) === config.evolution.instance
   );
-  return { reachable: true, exists: Boolean(item), owner: item?.instance?.owner ?? null };
+  return {
+    reachable: true,
+    exists: Boolean(item),
+    owner: item?.ownerJid ?? item?.instance?.owner ?? null,
+  };
 }
 
 async function evoConnectionState() {
@@ -109,11 +114,13 @@ async function setEvolutionWebhook() {
   const path = '/webhook/evolution' + (config.webhookToken ? '/' + config.webhookToken : '');
   const url = 'http://10.0.0.254:' + config.port + path;
   const res = await evoFetch('/webhook/set/' + config.evolution.instance, {
-    url,
-    enabled: true,
-    webhook_by_events: false,
-    webhook_base64: false,
-    events: ['MESSAGES_UPSERT', 'GROUP_PARTICIPANTS_UPDATE'],
+    webhook: {
+      url,
+      enabled: true,
+      byEvents: false,
+      base64: false,
+      events: ['MESSAGES_UPSERT', 'GROUP_PARTICIPANTS_UPDATE'],
+    },
   });
   // NUNCA loga a URL completa — o path carrega o WEBHOOK_TOKEN (segredo que
   // autentica o webhook); vazaria pro log/journal a cada (re)configuração.
@@ -147,6 +154,7 @@ const CONFIG_SECTIONS = {
     'enabled', 'igUserId', 'accessToken', 'appId', 'appSecret', 'publicBaseUrl',
     'proxyImages', 'caption', 'hashtags', 'postEveryHours', 'dailyCap', 'minScore',
   ],
+  tryon: ['enabled'],
   ollama: ['url', 'model'],
   copy: ['provider', 'anthropicApiKey', 'anthropicModel', 'openaiApiKey', 'openaiModel', 'styleExtra', 'persona', 'replyModel'],
   content: ['denylist', 'disclosure', 'footer', 'templates', 'penaltylist', 'ctas'],
@@ -1032,8 +1040,8 @@ export function registerPanelRoutes(app, requireAdmin) {
     const arr = Array.isArray(list) ? list : [list];
     const instances = arr
       .map(it => ({
-        name: it.instance?.instanceName ?? it.instanceName ?? null,
-        state: it.instance?.status ?? it.instance?.state ?? 'close',
+        name: it.name ?? it.instance?.instanceName ?? it.instanceName ?? null,
+        state: it.connectionStatus ?? it.instance?.status ?? it.instance?.state ?? 'close',
       }))
       .filter(i => i.name);
     res.json({ instances });
@@ -1053,6 +1061,7 @@ export function registerPanelRoutes(app, requireAdmin) {
         instanceName: config.evolution.instance,
         token,
         qrcode: true,
+        integration: 'WHATSAPP-BAILEYS',
       });
       if (!result) {
         return res.status(502).json({ error: 'falha ao criar a instância na Evolution — verifique EVOLUTION_URL/EVOLUTION_APIKEY' });

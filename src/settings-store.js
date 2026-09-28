@@ -316,6 +316,9 @@ export const OVERRIDABLE = {
   'instagram.dailyCap': { path: ['instagram', 'dailyCap'], parse: parseNumber('instagram.dailyCap', { integer: true, min: 1, max: 25 }) },
   'instagram.minScore': { path: ['instagram', 'minScore'], parse: parseNumber('instagram.minScore') },
 
+  // Try-on: gera a foto do produto vestida no avatar via IA (OpenAI). Toggle liga/desliga sem reiniciar.
+  'tryon.enabled': { path: ['tryon', 'enabled'], parse: parseBool('tryon.enabled') },
+
   'operation.postingWindow': { path: ['posting', 'window'], parse: windowParser('operation.postingWindow') },
   'operation.ramp': { path: ['posting', 'ramp'], parse: rampParser('operation.ramp') },
   'operation.peakHours': { path: ['posting', 'peakHours'], parse: parseHourList('operation.peakHours') },
@@ -533,6 +536,9 @@ export function maskedConfig({ channels = 0 } = {}) {
       accessTokenSet: Boolean(config.instagram.accessToken),
       accessTokenLast4: config.instagram.accessToken ? String(config.instagram.accessToken).slice(-4) : null,
       appSecretSet: Boolean(config.instagram.appSecret),
+    },
+    tryon: {
+      enabled: config.tryon.enabled,
     },
     operation: {
       postingWindow: `${pad(w.startH)}:${pad(w.startM)}-${pad(w.endH)}:${pad(w.endM)}`,

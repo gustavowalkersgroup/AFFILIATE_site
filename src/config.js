@@ -135,6 +135,20 @@ export const config = {
     timeoutMs: Number(process.env.IG_TIMEOUT_MS || 30000),
   },
 
+  facebook: {
+    enabled: process.env.FB_ENABLED === 'true',
+    pageId: process.env.FB_PAGE_ID || '',
+    accessToken: process.env.FB_ACCESS_TOKEN || '',
+    graphVersion: process.env.FB_GRAPH_VERSION || 'v23.0',
+    caption: process.env.FB_CAPTION || '{titulo}\n\n{preco_bloco}\n\n🛒 Confira aqui: {link}\n\n{hashtags}',
+    hashtags: process.env.FB_HASHTAGS || '#fitness #ofertas #achadinhos #publi',
+    postEveryHours: Number(process.env.FB_POST_EVERY_HOURS || 3),
+    dailyCap: Number(process.env.FB_DAILY_CAP || 8),
+    minScore: Number(process.env.FB_MIN_SCORE || 0),
+    timeoutMs: Number(process.env.FB_TIMEOUT_MS || 30000),
+    dryRun: process.env.FB_DRY_RUN === 'true',
+  },
+
   telegram: {
     apiId: Number(process.env.TELEGRAM_API_ID || 0),
     apiHash: process.env.TELEGRAM_API_HASH || '',
@@ -243,7 +257,7 @@ export const config = {
   content: {
     // Linha de identificação de publicidade (CONAR/CDC exigem identificar link
     // de afiliado como anúncio). Vazio desliga a linha. ?? preserva '' do env.
-    disclosure: process.env.DISCLOSURE ?? '*Publi*',
+    disclosure: process.env.DISCLOSURE ?? '*Publi #publi*',
     // Rodapé da mensagem de grupo (antes do disclosure). Vazio remove a linha.
     footer: process.env.MSG_FOOTER ?? '⏰ Preço pode mudar a qualquer momento!',
     // Templates de copy de fallback (1 por linha, com {titulo}). Vazio = usa os

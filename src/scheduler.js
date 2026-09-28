@@ -9,10 +9,11 @@ import { query, getSetting, setSetting, isPaused, purgeOldMessages } from './db.
 import { searchOffers } from './shopee.js';
 import { upsertOffer, pickNextOfferByMix, expireOldOffers } from './ranking.js';
 import { generateCopy } from './copy.js';
-import { postOfferToGroups, notifyOwner, postChannelInvite } from './poster.js';
+import { postOfferToGroups, notifyOwner, notifyOwnerOnce, postChannelInvite } from './poster.js';
 import { runBroadcast, broadcastStats } from './broadcast.js';
 import { runWarmer } from './warmer.js';
 import { runInstagramExecutor, runInstagramTokenRefresh, igStatus } from './instagram.js';
+import { runFacebookExecutor, fbStatus } from './facebook.js';
 import { isMonitorRunning, checkTelegramHealth } from './telegram.js';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -203,21 +204,53 @@ async function planTodaySlots({ onBoot = false } = {}) {
       .sort((a, b) => a - b);
     if (anchors.length === 0) anchors.push(w.startH);    // fallback defensivo
 
-    const chosenMinutes = new Set();
-    const times = [];
+    // Espaçamento mínimo entre slots — sem isso, round-robin nos 3 peakHours
+    // empilha vários posts na mesma hora quando n > anchors.length (ex.: n=12,
+    // 3 picos → 4 posts em ±15min de cada pico = flood no horário de almoço).
+    const MIN_GAP_MINUTES = Math.max(20, Math.floor((winEnd - winStart) / n) - JITTER);
+
+    const chosenTimes = [];
     let guard = 0;
     let ai = 0;
-    while (times.length < n && guard++ < 1000) {
-      const h = anchors[ai % anchors.length];
-      ai++;
-      const base = h * 60;
-      const jitter = Math.floor(Math.random() * (2 * JITTER + 1)) - JITTER;  // -J..+J
-      const cur = Math.min(Math.max(base + jitter, winStart), winEnd - 1);
-      if (chosenMinutes.has(cur)) continue;
-      chosenMinutes.add(cur);
-      const sec = Math.floor(Math.random() * 60);
-      times.push(tzDate(y, m, d, Math.floor(cur / 60), cur % 60, sec));
+    while (chosenTimes.length < n && guard++ < 2000) {
+      let cur;
+      // 1 em cada 5 tentativas: sorteia em QUALQUER ponto da janela (não só
+      // perto de um pico). Sem isso, com poucos anchors e MIN_GAP alto, as
+      // tentativas travam sempre no mesmo pico saturado e nunca preenchem os
+      // slots restantes — este fallback garante que sobrem pra espalhar no dia.
+      if (guard % 5 === 0) {
+        cur = winStart + Math.floor(Math.random() * (winEnd - winStart));
+      } else {
+        const h = anchors[ai % anchors.length];
+        ai++;
+        const base = h * 60;
+        const jitter = Math.floor(Math.random() * (2 * JITTER + 1)) - JITTER;  // -J..+J
+        cur = Math.min(Math.max(base + jitter, winStart), winEnd - 1);
+      }
+      if (chosenTimes.some((t) => Math.abs(t - cur) < MIN_GAP_MINUTES)) continue;
+      chosenTimes.push(cur);
     }
+    // Trava de sanidade: o espaçamento mínimo acima DEVE impedir horários
+    // próximos, mas se uma mudança futura quebrar isso silenciosamente, os
+    // posts sairiam todos amontoados sem ninguém perceber até o fim do dia.
+    // Confere e avisa o dono na hora por WhatsApp se acontecer de novo.
+    const tightPair = chosenTimes.some((t, i) =>
+      chosenTimes.some((o, j) => i !== j && Math.abs(t - o) < MIN_GAP_MINUTES)
+    );
+    if (tightPair) {
+      console.log(
+        `[scheduler] ⚠️ plano de hoje saiu com espaçamento menor que o mínimo (${MIN_GAP_MINUTES}min) — possível bug de config`
+      );
+      notifyOwnerOnce(
+        'scheduler-tight-plan',
+        `⚠️ O plano de posts de hoje saiu agrupado (espaçamento menor que ${MIN_GAP_MINUTES}min entre horários) — confira a aba Operação.`,
+        { everyHours: 12 }
+      ).catch(() => {});
+    }
+
+    const times = chosenTimes
+      .sort((a, b) => a - b)
+      .map((cur) => tzDate(y, m, d, Math.floor(cur / 60), cur % 60, Math.floor(Math.random() * 60)));
 
     // boot tardio: cria slots só para horários futuros
     const future = times.filter((t) => t.getTime() > now.getTime());
@@ -444,6 +477,9 @@ async function runDailySummary() {
     if (bc && bc.configured) {
       lines.push(`📨 Disparos: ${bc.sentToday}/${bc.dailyTarget} enviados, ${bc.failed} falha(s)${bc.paused ? ' (pausado)' : ''}`);
     }
+    if (fb && fb.configured) {
+      lines.push(`📘 Facebook: ${fb.postedToday}/${fb.dailyCap} posts${fb.enabled ? '' : ' (auto-post DESLIGADO)'}`);
+    }
     if (config.telegram.session) {
       lines.push(`📡 Telegram: ${tgMonitor ? 'monitorando' : '⚠️ monitor CAÍDO'} · ${tgChannels} canal(is)`);
     }
@@ -506,6 +542,15 @@ export function startScheduler() {
     })
     .catch((err) => console.log(`[scheduler] erro no recovery de contatos 'sending': ${err.message}`));
 
+  // Recovery Facebook: oferta presa em 'posting' (crash no meio) marca erro p/ conferência.
+  query(`UPDATE offers SET fb_status = 'error', fb_attempts = GREATEST(fb_attempts, 3),
+          fb_error = 'interrompido no envio (reinício) — confira o feed'
+        WHERE fb_status = 'posting'`)
+    .then((r) => {
+      if (r.rowCount > 0) console.log(`[scheduler] ${r.rowCount} oferta(s) órfã(s) em fb_status 'posting' marcada(s) p/ conferência manual`);
+    })
+    .catch((err) => console.log(`[scheduler] erro no recovery do Facebook: ${err.message}`));
+
   // Recovery do Instagram: oferta presa em ig_status='posting' (crash no meio de
   // uma publicação). NÃO volta a NULL — a publicação NÃO é atômica com o DB, o
   // post pode já ter saído no feed; re-postar cegamente duplicaria. Marca como
@@ -538,7 +583,10 @@ export function startScheduler() {
   // 5b. refresh do long-lived token do IG: 1x/dia às 04:20 (renova só quando
   //     falta pouco p/ expirar; roda mesmo pausado p/ não deixar o token morrer).
   cron.schedule('20 4 * * *', () => { runInstagramTokenRefresh(); }, opts);
-  // 4. resumo diário 22:30
+  // 4. executor do Facebook a cada 5min (o executor aplica cadência, janela,
+  //    limite diário e a flag enabled internamente)
+  cron.schedule('*/5 * * * *', () => { runFacebookExecutor(); }, opts);
+  // 5. resumo diário 22:30
   cron.schedule('30 22 * * *', () => { runDailySummary(); }, opts);
   // 6. healthcheck do Telegram a cada 10min: detecta sessão revogada DEPOIS do
   //    boot (isMonitorRunning() sozinho não pegaria isso) e avisa o dono.

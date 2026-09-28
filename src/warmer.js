@@ -122,7 +122,7 @@ export function effectiveCap(dailyCap, rampDays, daysSinceStart) {
 
 /**
  * Normaliza a resposta de GET /instance/fetchInstances para [{instance,jid}],
- * mantendo só conexões 'open' com ownerJid. Tolera os formatos v1.8.x.
+ * mantendo só conexões 'open' com ownerJid. Tolera os formatos v1.8.x e v2.x.
  */
 export function extractConnectedChips(fetchResult) {
   const arr = Array.isArray(fetchResult) ? fetchResult
@@ -267,8 +267,8 @@ export async function runWarmer() {
     const text = buildWarmerMessage(toSend.stage);
     const result = await evoFetch(`/message/sendText/${toSend.fromInst}`, {
       number: toSend.toJid,
-      options: { delay: randomBetween([1200, 4000]), presence: 'composing' },
-      textMessage: { text },
+      text,
+      delay: randomBetween([1200, 4000]),
     });
 
     if (result !== null) {
@@ -313,8 +313,8 @@ export async function blastWarmerTarget(rawNumber) {
       const text = buildWarmerMessage(pickOne(['open', 'reply', 'followup']));
       const result = await evoFetch(`/message/sendText/${chip.instance}`, {
         number: norm.jid,
-        options: { delay: randomBetween([1200, 4000]), presence: 'composing' },
-        textMessage: { text },
+        text,
+        delay: randomBetween([1200, 4000]),
       });
       if (result !== null) {
         sent += 1;

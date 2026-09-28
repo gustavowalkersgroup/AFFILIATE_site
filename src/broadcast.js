@@ -339,8 +339,9 @@ export async function runBroadcast() {
       try {
         const result = await evoFetch(`/message/sendText/${inst}`, {
           number: jid,
-          options: { delay: randomBetween([1500, 4000]), presence: 'composing', linkPreview: true },
-          textMessage: { text: message },
+          text: message,
+          delay: randomBetween([1500, 4000]),
+          linkPreview: true,
         });
         if (result !== null) { usedInst = inst; break; }
       } catch (err) {
@@ -384,8 +385,9 @@ export async function sendTestInvite(rawNumber) {
   for (const inst of getInstances()) {
     const result = await evoFetch(`/message/sendText/${inst}`, {
       number: jid,
-      options: { delay: 1200, presence: 'composing', linkPreview: true },
-      textMessage: { text: message },
+      text: message,
+      delay: 1200,
+      linkPreview: true,
     });
     if (result !== null) return { ok: true, preview: message };
   }
