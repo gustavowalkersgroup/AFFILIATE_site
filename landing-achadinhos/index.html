@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Achadinhos Fitness — Ofertas Shopee no WhatsApp</title>
+<meta name="description" content="Entre em contato e receba o link do grupo de ofertas fitness da Shopee." />
+
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '2929188744082350');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=2929188744082350&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+
+<style>
+  :root {
+    --bg: #0b0b0d;
+    --card: #17171b;
+    --pink: #ff2d78;
+    --text: #f5f5f7;
+    --muted: #9a9aa5;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    min-height: 100dvh;
+    background: radial-gradient(circle at 50% 0%, #241018 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+    text-align: center;
+  }
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--card);
+    border: 1px solid #2a2a30;
+    border-radius: 20px;
+    padding: 32px 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .badge {
+    display: inline-block;
+    background: rgba(255,45,120,0.15);
+    color: var(--pink);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 999px;
+    margin-bottom: 18px;
+    letter-spacing: 0.3px;
+  }
+  h1 {
+    font-size: 24px;
+    line-height: 1.3;
+    margin: 0 0 12px;
+  }
+  p.sub {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.5;
+    margin: 0 0 28px;
+  }
+  .cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 16px 20px;
+    background: #25d366;
+    color: #05230f;
+    font-size: 17px;
+    font-weight: 800;
+    border: none;
+    border-radius: 14px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .15s ease;
+  }
+  .cta:active { transform: scale(0.97); }
+  .foot {
+    margin-top: 20px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .spin {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(5,35,15,0.35);
+    border-top-color: #05230f;
+    border-radius: 50%;
+    animation: sp .7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes sp { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <span class="badge">🔥 ATÉ 70% OFF SHOPEE</span>
+      <h1>Achadinhos Fitness</h1>
+      <p class="sub">
+        Toque no botão abaixo para falar com a gente no WhatsApp<br />
+        e receber o link do grupo de ofertas fitness. 💪
+      </p>
+      <a id="cta" class="cta" href="https://wa.me/5519976031141?text=%2Fgrupoachadinhos">
+        <span id="ctaIcon">💬</span>
+        <span id="ctaText">Chamar no WhatsApp</span>
+      </a>
+      <p class="foot">Você será direcionado para o WhatsApp oficial Achadinhos Fitness.</p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var DEST = "https://wa.me/5519976031141?text=%2Fgrupoachadinhos";
+      var redirected = false;
+
+      function goToWhatsApp(source) {
+        if (redirected) return;
+        redirected = true;
+        try {
+          if (window.fbq) {
+            fbq('track', 'Contact', { content_name: 'achadinhos_fitness_landing', source: source });
+          }
+        } catch (e) {}
+        window.location.href = DEST;
+      }
+
+      document.getElementById('cta').addEventListener('click', function (e) {
+        e.preventDefault();
+        goToWhatsApp('manual_click');
+      });
+
+      // Auto-redirect after a short delay, giving the Pixel time to fire.
+      setTimeout(function () {
+        document.getElementById('ctaIcon').outerHTML = '<span class="spin"></span>';
+        document.getElementById('ctaText').textContent = 'Abrindo WhatsApp...';
+        goToWhatsApp('auto_redirect');
+      }, 1800);
+    })();
+  </script>
+</body>
+</html>

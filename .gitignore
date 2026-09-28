@@ -7,3 +7,8 @@ node_modules/
 src/catalog.js.bak
 .superpowers/
 *.bak
+api_meta.env
+hermes-ad-agent/
+meta-ads-cli-repo/
+/index.html
+opencode.json
